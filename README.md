@@ -44,7 +44,7 @@ npm run dev
 
 Open http://localhost:3000.
 
-- `/host` starts a room.
+- `/host` lets the host type a room name and starts that exact slug.
 - `/host/[roomId]` controls an existing host room when the browser has its private control token.
 - `/rooms` lists active Feefee rooms.
 - `/room/[roomId]` joins a room directly.
@@ -60,15 +60,16 @@ Open http://localhost:3000.
 ## Test With 3 Friends
 
 1. Open `/host` in desktop Chrome.
-2. Set a short DJ name or keep the generated name.
-3. Copy the host control link if you want to keep this room for later.
-4. Open YouTube, Spotify Web, SoundCloud, or another audio tab and start a song.
-5. In Feefee, click Share music.
-6. Choose the tab playing music and enable Share tab audio.
-7. Show the QR code or send friends to `/rooms`.
-8. Friends scan the QR or choose the live room, put in headphones, and tap Join audio.
-9. Stop sharing to confirm guests see that the host stopped sharing.
-10. End room when done.
+2. Type a room name, for example `gold pulse`, and start the room.
+3. Set a short DJ name or keep the generated name.
+4. Copy the host control link if you want to keep this room for later.
+5. Open YouTube, Spotify Web, SoundCloud, or another audio tab and start a song.
+6. In Feefee, click Share music.
+7. Choose the tab playing music and enable Share tab audio.
+8. Show the QR code or send friends to `/rooms`.
+9. Friends scan the QR or choose the live room, put in headphones, and tap Join audio.
+10. Stop sharing to confirm guests see that the host stopped sharing.
+11. End room when done.
 
 ## Known Technical Limitations
 
@@ -76,3 +77,4 @@ Open http://localhost:3000.
 - The host must choose the music tab and enable Share tab audio.
 - Guests must tap Join audio because mobile browsers require a user gesture before audio playback.
 - The host control link is private. Anyone with that link can control that room.
+- Typed room names are exact slugs. If a typed name is already active, only its existing host control link can control it.

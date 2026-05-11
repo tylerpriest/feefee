@@ -1,7 +1,12 @@
 import type { Room } from "livekit-server-sdk";
 import { RoomServiceClient } from "livekit-server-sdk";
 import {
+  controlTokenMatchesHash,
+  hashControlToken,
+} from "@/lib/control-token";
+import {
   cleanHostName,
+  type FeefeeRoomMetadata,
   makeFeefeeMetadata,
   parseFeefeeMetadata,
   titleFromRoomName,
@@ -41,13 +46,24 @@ export function getRoomServiceClient() {
   });
 }
 
+export function assertRoomControl(
+  metadata: FeefeeRoomMetadata | null,
+  controlToken: string,
+) {
+  if (!controlTokenMatchesHash(controlToken, metadata?.controlTokenHash)) {
+    throw new Error("This room name is already being hosted.");
+  }
+}
+
 export async function ensureFeefeeRoom(
   roomName: string,
   {
+    controlToken,
     hostName,
     isSharing = false,
     roomService = getRoomServiceClient(),
   }: {
+    controlToken?: string;
     hostName?: string;
     isSharing?: boolean;
     roomService?: RoomServiceClient;
@@ -55,10 +71,31 @@ export async function ensureFeefeeRoom(
 ): Promise<Room> {
   const fallbackName = titleFromRoomName(roomName);
   const safeHostName = cleanHostName(hostName ?? fallbackName, fallbackName);
+  const controlTokenHash = controlToken
+    ? hashControlToken(controlToken)
+    : undefined;
   const [existingRoom] = await roomService.listRooms([roomName]);
 
   if (existingRoom) {
-    if (parseFeefeeMetadata(existingRoom.metadata)) {
+    const existing = parseFeefeeMetadata(existingRoom.metadata);
+
+    if (existing) {
+      if (controlToken) {
+        assertRoomControl(existing, controlToken);
+      }
+
+      if (!existing.controlTokenHash && controlTokenHash) {
+        return roomService.updateRoomMetadata(
+          roomName,
+          makeFeefeeMetadata({
+            existing,
+            hostName: existing.hostName,
+            isSharing: existing.isSharing,
+            controlTokenHash,
+          }),
+        );
+      }
+
       return existingRoom;
     }
 
@@ -67,6 +104,7 @@ export async function ensureFeefeeRoom(
       makeFeefeeMetadata({
         hostName: safeHostName,
         isSharing,
+        controlTokenHash,
       }),
     );
   }
@@ -80,12 +118,19 @@ export async function ensureFeefeeRoom(
       metadata: makeFeefeeMetadata({
         hostName: safeHostName,
         isSharing,
+        controlTokenHash,
       }),
     });
   } catch (error) {
     const [createdByAnotherRequest] = await roomService.listRooms([roomName]);
 
     if (createdByAnotherRequest) {
+      const metadata = parseFeefeeMetadata(createdByAnotherRequest.metadata);
+
+      if (controlToken) {
+        assertRoomControl(metadata, controlToken);
+      }
+
       return createdByAnotherRequest;
     }
 

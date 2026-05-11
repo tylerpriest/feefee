@@ -165,8 +165,6 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
     const nextToken = tokenFromUrl || storedToken || null;
 
     if (tokenFromUrl) {
-      window.localStorage.setItem(storageKey, tokenFromUrl);
-
       const url = new URL(window.location.href);
       url.searchParams.delete("control");
       window.history.replaceState(
@@ -409,6 +407,10 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
         }
 
         roomRef.current = room;
+        window.localStorage.setItem(
+          getControlStorageKey(roomName),
+          hostControlToken,
+        );
         setStatus("connected");
         syncListenerCount();
         void publishRoomState(false);

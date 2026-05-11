@@ -5,6 +5,7 @@ export type FeefeeRoomMetadata = {
   hostName: string;
   isSharing: boolean;
   controllerId?: string;
+  controlTokenHash?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -30,7 +31,6 @@ export function titleFromRoomName(roomName: string) {
   return roomName
     .split("-")
     .filter(Boolean)
-    .slice(0, 2)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
@@ -55,6 +55,10 @@ export function parseFeefeeMetadata(
       isSharing: Boolean(data.isSharing),
       controllerId:
         typeof data.controllerId === "string" ? data.controllerId : undefined,
+      controlTokenHash:
+        typeof data.controlTokenHash === "string"
+          ? data.controlTokenHash
+          : undefined,
       createdAt:
         typeof data.createdAt === "string" ? data.createdAt : new Date().toISOString(),
       updatedAt:
@@ -70,11 +74,13 @@ export function makeFeefeeMetadata({
   hostName,
   isSharing,
   controllerId,
+  controlTokenHash,
 }: {
   existing?: FeefeeRoomMetadata | null;
   hostName: string;
   isSharing: boolean;
   controllerId?: string;
+  controlTokenHash?: string;
 }) {
   const now = new Date().toISOString();
 
@@ -83,6 +89,7 @@ export function makeFeefeeMetadata({
     hostName,
     isSharing,
     controllerId: controllerId ?? existing?.controllerId,
+    controlTokenHash: controlTokenHash ?? existing?.controlTokenHash,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   } satisfies FeefeeRoomMetadata);

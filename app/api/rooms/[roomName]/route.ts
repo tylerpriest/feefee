@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { verifyControlToken } from "@/lib/control-token";
-import { ensureFeefeeRoom, getRoomServiceClient } from "@/lib/livekit-server";
+import {
+  assertRoomControl,
+  ensureFeefeeRoom,
+  getRoomServiceClient,
+} from "@/lib/livekit-server";
 import { isValidRoomName } from "@/lib/rooms";
 import {
   cleanHostName,
@@ -31,11 +35,10 @@ type LiveKitRoomLike = {
   numParticipants: number;
 };
 
-function hasHostControl(request: Request, roomName: string) {
-  return verifyControlToken(
-    roomName,
-    request.headers.get("x-feefee-control-token") ?? "",
-  );
+function getHostControlToken(request: Request, roomName: string) {
+  const controlToken = request.headers.get("x-feefee-control-token") ?? "";
+
+  return verifyControlToken(roomName, controlToken) ? controlToken : null;
 }
 
 function publicRoomSummary(
@@ -97,7 +100,9 @@ export async function PATCH(request: Request, { params }: RoomParams) {
     return NextResponse.json({ error: "Invalid room name." }, { status: 400 });
   }
 
-  if (!hasHostControl(request, roomName)) {
+  const controlToken = getHostControlToken(request, roomName);
+
+  if (!controlToken) {
     return NextResponse.json(
       { error: "Host control link is missing or invalid." },
       { status: 403 },
@@ -114,7 +119,10 @@ export async function PATCH(request: Request, { params }: RoomParams) {
 
   try {
     const roomService = getRoomServiceClient();
-    const room = await ensureFeefeeRoom(roomName, { roomService });
+    const room = await ensureFeefeeRoom(roomName, {
+      controlToken,
+      roomService,
+    });
 
     const existing = parseFeefeeMetadata(room.metadata);
     const hostName = cleanHostName(
@@ -152,6 +160,13 @@ export async function PATCH(request: Request, { params }: RoomParams) {
       ),
     });
   } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "This room name is already being hosted."
+    ) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+
     return NextResponse.json(
       {
         error:
@@ -169,7 +184,9 @@ export async function DELETE(request: Request, { params }: RoomParams) {
     return NextResponse.json({ error: "Invalid room name." }, { status: 400 });
   }
 
-  if (!hasHostControl(request, roomName)) {
+  const controlToken = getHostControlToken(request, roomName);
+
+  if (!controlToken) {
     return NextResponse.json(
       { error: "Host control link is missing or invalid." },
       { status: 403 },
@@ -177,10 +194,26 @@ export async function DELETE(request: Request, { params }: RoomParams) {
   }
 
   try {
-    await getRoomServiceClient().deleteRoom(roomName);
+    const roomService = getRoomServiceClient();
+    const [room] = await roomService.listRooms([roomName]);
+
+    if (room) {
+      assertRoomControl(parseFeefeeMetadata(room.metadata), controlToken);
+      await roomService.deleteRoom(roomName);
+    }
 
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ ok: true });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "This room name is already being hosted."
+    ) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Could not end room." },
+      { status: 500 },
+    );
   }
 }

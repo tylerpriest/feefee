@@ -63,11 +63,18 @@ export async function POST(request: Request) {
     try {
       const roomService = getRoomServiceClient();
 
-      await ensureFeefeeRoom(roomName, { roomService });
+      await ensureFeefeeRoom(roomName, { controlToken, roomService });
       await roomService
         .removeParticipant(roomName, `host-${roomName}`)
         .catch(() => undefined);
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === "This room name is already being hosted."
+      ) {
+        return NextResponse.json({ error: error.message }, { status: 409 });
+      }
+
       return NextResponse.json(
         {
           error:

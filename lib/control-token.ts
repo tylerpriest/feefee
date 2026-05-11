@@ -50,6 +50,16 @@ export function createControlToken(roomName: string) {
   return `${CONTROL_TOKEN_PREFIX}.${payload}.${signPayload(payload)}`;
 }
 
+export function hashControlToken(token: string) {
+  return createHmac("sha256", getControlSecret())
+    .update(token)
+    .digest("base64url");
+}
+
+export function controlTokenMatchesHash(token: string, hash?: string) {
+  return !hash || signaturesMatch(hashControlToken(token), hash);
+}
+
 export function verifyControlToken(roomName: string, token: string) {
   const [prefix, payload, signature] = token.split(".");
 
