@@ -69,6 +69,9 @@ export function LiveRooms() {
           <h1 className="mt-3 text-4xl font-black leading-none text-stone-50">
             Live rooms
           </h1>
+          <p className="mt-2 text-base font-semibold leading-6 text-stone-400">
+            Tap a room to join audio.
+          </p>
         </div>
         <Link
           href="/host"
@@ -133,6 +136,9 @@ export function LiveRooms() {
             </div>
             <p className="mt-4 text-base font-bold text-stone-300">
               {listenerLabel(room.listenerCount)}
+            </p>
+            <p className="mt-3 text-sm font-black text-lime-300">
+              Join audio
             </p>
           </Link>
         ))}

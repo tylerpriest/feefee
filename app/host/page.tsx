@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { HostStartForm } from "@/components/host-start-form";
 import { createControlToken } from "@/lib/control-token";
 import { isValidRoomName, randomRoomName, slugifyRoomName } from "@/lib/rooms";
 
@@ -25,40 +26,25 @@ export default async function HostPage({ searchParams }: HostPageProps) {
   const hasInvalidRoom = requestedRoom !== undefined && !isValidRoomName(roomName);
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-6 py-10">
+    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-5 py-8">
       <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-lime-300">
-        Host
+        Feefee host
       </p>
       <h1 className="text-5xl font-black leading-none text-stone-50 sm:text-6xl">
-        Name your room.
+        Start a room.
       </h1>
-      <form action="/host" className="mt-8 grid gap-4">
-        <label className="text-sm font-semibold uppercase tracking-[0.16em] text-stone-400">
-          Room name
-          <input
-            name="room"
-            defaultValue={requestedRoom ?? suggestedRoomName}
-            maxLength={64}
-            autoCapitalize="none"
-            autoCorrect="off"
-            className="mt-3 h-14 w-full rounded-md border border-stone-700 bg-stone-900 px-4 text-xl font-black text-stone-100 outline-none focus:border-lime-300"
-          />
-        </label>
-        {hasInvalidRoom ? (
-          <p className="rounded-lg border border-red-400/40 bg-red-950/50 p-4 text-sm font-semibold leading-6 text-red-100">
-            Use at least 3 letters or numbers.
-          </p>
-        ) : null}
-        <button
-          type="submit"
-          className="flex h-16 w-full items-center justify-center rounded-lg bg-lime-300 px-6 text-xl font-black text-stone-950 transition hover:bg-lime-200 focus:outline-none focus:ring-4 focus:ring-lime-300/40"
-        >
-          Start room
-        </button>
-      </form>
-      <p className="mt-5 text-base font-semibold leading-6 text-stone-400">
-        Type gold pulse and the room will be gold-pulse.
+      <p className="mt-5 text-lg font-semibold leading-7 text-stone-300">
+        Type a name. Play music. Show the QR.
       </p>
+      {hasInvalidRoom ? (
+        <p className="mt-5 rounded-lg border border-red-400/40 bg-red-950/50 p-4 text-sm font-semibold leading-6 text-red-100">
+          Use at least 3 letters or numbers.
+        </p>
+      ) : null}
+      <HostStartForm
+        suggestedRoomName={suggestedRoomName}
+        initialRoomName={requestedRoom}
+      />
     </main>
   );
 }

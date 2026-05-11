@@ -620,10 +620,10 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
       <header className="mb-5 flex items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-lime-300">
-            Host
+            Host room
           </p>
           <h1 className="mt-2 text-4xl font-black leading-none text-stone-50">
-            Start a room
+            {defaultHostName}
           </h1>
         </div>
         <Link
@@ -734,12 +734,12 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
         ) : null}
       </section>
 
-      <section className="mt-4 rounded-lg border border-stone-800 bg-stone-950/42 p-4">
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-stone-500">
-          Host control link
-        </p>
-        <p className="mt-2 text-sm font-semibold leading-5 text-stone-400">
-          Keep this link to run this room again.
+      <details className="mt-4 rounded-lg border border-stone-800 bg-stone-950/42 p-4">
+        <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] text-stone-400">
+          Keep this room
+        </summary>
+        <p className="mt-3 text-sm font-semibold leading-5 text-stone-400">
+          Copy this private link to run the same room again.
         </p>
         <div className="mt-3 flex gap-2">
           <input
@@ -756,7 +756,7 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
             {copiedHost ? "Copied" : "Copy"}
           </button>
         </div>
-      </section>
+      </details>
 
       <button
         type="button"
