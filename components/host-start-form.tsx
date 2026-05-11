@@ -27,7 +27,7 @@ export function HostStartForm({
           maxLength={64}
           autoCapitalize="none"
           autoCorrect="off"
-          className="mt-3 h-16 w-full rounded-md border border-stone-700 bg-stone-900 px-4 text-2xl font-black text-stone-100 outline-none focus:border-lime-300"
+          className="mt-3 h-16 w-full rounded-md border border-stone-700 bg-stone-900 px-4 text-2xl font-black text-stone-100 outline-none focus:border-[#c2ad78]"
         />
       </label>
 
@@ -43,7 +43,7 @@ export function HostStartForm({
       <button
         type="submit"
         disabled={!isReady}
-        className="flex h-16 w-full items-center justify-center rounded-lg bg-lime-300 px-6 text-xl font-black text-stone-950 transition hover:bg-lime-200 focus:outline-none focus:ring-4 focus:ring-lime-300/40 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
+        className="flex h-16 w-full items-center justify-center rounded-lg bg-[#c2ad78] px-6 text-xl font-black text-stone-950 transition hover:bg-[#d2c18f] focus:outline-none focus:ring-4 focus:ring-[#c2ad78]/25 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
       >
         Start room
       </button>

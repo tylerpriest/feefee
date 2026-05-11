@@ -646,7 +646,7 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 py-6">
       <header className="mb-5 flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-lime-300">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#c2ad78]">
             Host room
           </p>
           <h1 className="mt-2 text-4xl font-black leading-none text-stone-50">
@@ -668,7 +668,7 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
             value={hostName}
             onChange={(event) => setHostName(event.target.value)}
             maxLength={32}
-            className="mt-3 h-12 w-full rounded-md border border-stone-700 bg-stone-900 px-3 text-base font-black text-stone-100 outline-none focus:border-lime-300"
+            className="mt-3 h-12 w-full rounded-md border border-stone-700 bg-stone-900 px-3 text-base font-black text-stone-100 outline-none focus:border-[#c2ad78]"
           />
         </label>
       </section>
@@ -704,7 +704,7 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
           type="button"
           onClick={shareMusic}
           disabled={!isConnected || isSharing || isShareBusy || isLeaving}
-          className="flex h-16 w-full items-center justify-center rounded-lg bg-lime-300 px-6 text-xl font-black text-stone-950 transition hover:bg-lime-200 focus:outline-none focus:ring-4 focus:ring-lime-300/40 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
+          className="flex h-16 w-full items-center justify-center rounded-lg bg-[#c2ad78] px-6 text-xl font-black text-stone-950 transition hover:bg-[#d2c18f] focus:outline-none focus:ring-4 focus:ring-[#c2ad78]/25 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
         >
           {isShareBusy ? "Sharing..." : isSharing ? "Music is live" : "Share music"}
         </button>

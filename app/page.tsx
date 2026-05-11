@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function Home() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-6 py-10">
-      <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-lime-300">
+      <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-[#c2ad78]">
         Feefee
       </p>
       <h1 className="text-5xl font-black leading-none text-stone-50 sm:text-6xl">
@@ -20,7 +20,7 @@ export default function Home() {
       <div className="mt-10 grid gap-3">
         <Link
           href="/host"
-          className="flex h-16 w-full items-center justify-center rounded-lg bg-lime-300 px-6 text-xl font-black text-stone-950 transition hover:bg-lime-200 focus:outline-none focus:ring-4 focus:ring-lime-300/40"
+          className="flex h-16 w-full items-center justify-center rounded-lg bg-[#c2ad78] px-6 text-xl font-black text-stone-950 transition hover:bg-[#d2c18f] focus:outline-none focus:ring-4 focus:ring-[#c2ad78]/25"
         >
           Start a room
         </Link>

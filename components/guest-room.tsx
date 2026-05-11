@@ -426,7 +426,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 py-6">
       <header className="mb-6">
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-lime-300">
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#c2ad78]">
           Listening
         </p>
         <h1 className="mt-3 break-words text-4xl font-black leading-none text-stone-50">
@@ -464,7 +464,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
           type="button"
           onClick={joinAudio}
           disabled={!canJoin || isConnecting}
-          className="flex h-16 w-full items-center justify-center rounded-lg bg-lime-300 px-6 text-xl font-black text-stone-950 transition hover:bg-lime-200 focus:outline-none focus:ring-4 focus:ring-lime-300/40 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
+          className="flex h-16 w-full items-center justify-center rounded-lg bg-[#c2ad78] px-6 text-xl font-black text-stone-950 transition hover:bg-[#d2c18f] focus:outline-none focus:ring-4 focus:ring-[#c2ad78]/25 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
         >
           {primaryButtonLabel}
         </button>
@@ -539,7 +539,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
                 type="button"
                 onClick={() => void connectRoom(room.roomName)}
                 disabled={isCurrent || isConnecting}
-                className="rounded-lg border border-stone-800 bg-stone-900/70 p-3 text-left transition hover:border-lime-300/60 disabled:cursor-default disabled:border-lime-300/60"
+                className="rounded-lg border border-stone-800 bg-stone-900/70 p-3 text-left transition hover:border-[#c2ad78]/40 disabled:cursor-default disabled:border-[#c2ad78]/50"
               >
                 <span className="flex items-start justify-between gap-3">
                   <span>
@@ -553,7 +553,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
                   <span
                     className={`rounded-full px-2 py-1 text-xs font-black ${
                       room.isSharing
-                        ? "bg-lime-300 text-stone-950"
+                        ? "bg-[#c2ad78] text-stone-950"
                         : "bg-stone-800 text-stone-300"
                     }`}
                   >

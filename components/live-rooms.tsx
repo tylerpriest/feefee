@@ -63,7 +63,7 @@ export function LiveRooms() {
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 py-6">
       <header className="mb-7 flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-lime-300">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#c2ad78]">
             Feefee
           </p>
           <h1 className="mt-3 text-4xl font-black leading-none text-stone-50">
@@ -75,7 +75,7 @@ export function LiveRooms() {
         </div>
         <Link
           href="/host"
-          className="rounded-md bg-lime-300 px-3 py-2 text-sm font-black text-stone-950"
+          className="rounded-md bg-[#c2ad78] px-3 py-2 text-sm font-black text-stone-950"
         >
           Host
         </Link>
@@ -101,7 +101,7 @@ export function LiveRooms() {
           </p>
           <Link
             href="/host"
-            className="mt-5 flex h-14 w-full items-center justify-center rounded-lg bg-lime-300 px-5 text-lg font-black text-stone-950"
+            className="mt-5 flex h-14 w-full items-center justify-center rounded-lg bg-[#c2ad78] px-5 text-lg font-black text-stone-950"
           >
             Start a room
           </Link>
@@ -113,7 +113,7 @@ export function LiveRooms() {
           <Link
             key={room.roomName}
             href={`/room/${room.roomName}?join=1`}
-            className="rounded-lg border border-stone-700/80 bg-stone-950/58 p-5 transition hover:border-lime-300/60"
+            className="rounded-lg border border-stone-700/80 bg-stone-950/58 p-5 transition hover:border-[#c2ad78]/40"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -127,7 +127,7 @@ export function LiveRooms() {
               <span
                 className={`rounded-full px-3 py-1 text-sm font-black ${
                   room.isSharing
-                    ? "bg-lime-300 text-stone-950"
+                    ? "bg-[#c2ad78] text-stone-950"
                     : "bg-stone-800 text-stone-300"
                 }`}
               >
@@ -137,7 +137,7 @@ export function LiveRooms() {
             <p className="mt-4 text-base font-bold text-stone-300">
               {listenerLabel(room.listenerCount)}
             </p>
-            <p className="mt-3 text-sm font-black text-lime-300">
+            <p className="mt-3 text-sm font-black text-[#c2ad78]">
               Join audio
             </p>
           </Link>

@@ -27,7 +27,7 @@ export default async function HostPage({ searchParams }: HostPageProps) {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-5 py-8">
-      <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-lime-300">
+      <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-[#c2ad78]">
         Feefee host
       </p>
       <h1 className="text-5xl font-black leading-none text-stone-50 sm:text-6xl">
