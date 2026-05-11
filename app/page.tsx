@@ -14,8 +14,8 @@ export default function Home() {
         People hear it.
       </h1>
       <p className="mt-6 max-w-md text-lg leading-7 text-stone-300">
-        Broadcast one browser tab&apos;s audio to friends. No playlist. No
-        accounts. Just the sound in their headphones.
+        Broadcast whatever is playing in one browser tab. Friends scan the QR
+        and listen in headphones.
       </p>
       <div className="mt-10 grid gap-3">
         <Link

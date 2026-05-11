@@ -36,7 +36,7 @@ export function HostStartForm({
           Guest link
         </p>
         <p className="mt-2 break-all text-lg font-black text-stone-100">
-          /room/{roomSlug || "your-room"}
+          /room/{roomSlug || "your-room"}?join=1
         </p>
       </div>
 

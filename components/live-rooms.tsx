@@ -70,7 +70,7 @@ export function LiveRooms() {
             Live rooms
           </h1>
           <p className="mt-2 text-base font-semibold leading-6 text-stone-400">
-            Tap a room to join audio.
+            Pick a DJ and listen.
           </p>
         </div>
         <Link
@@ -97,7 +97,7 @@ export function LiveRooms() {
         <section className="rounded-lg border border-stone-700/80 bg-stone-950/58 p-5">
           <p className="text-2xl font-black text-stone-50">No one is live.</p>
           <p className="mt-2 text-base font-semibold leading-6 text-stone-300">
-            Start a room or check again in a moment.
+            Start a room or check back in a moment.
           </p>
           <Link
             href="/host"

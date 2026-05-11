@@ -31,11 +31,19 @@ import {
 } from "@/lib/room-metadata";
 
 const NO_AUDIO_MESSAGE =
-  "Choose the music tab and enable Share tab audio.";
+  "No audio came through. Pick the music tab and turn on tab audio.";
 const UNSUPPORTED_CAPTURE_MESSAGE =
-  "Use desktop Chrome to share tab audio.";
+  "This browser cannot share tab audio. Try Chrome or Edge on desktop.";
 const MISSING_CONTROL_MESSAGE =
   "This host link is missing its control token. Start a new room from /host.";
+
+type DisplayMediaOptionsWithAudioHints = DisplayMediaStreamOptions & {
+  preferCurrentTab?: boolean;
+  selfBrowserSurface?: "include" | "exclude";
+  surfaceSwitching?: "include" | "exclude";
+  systemAudio?: "include" | "exclude";
+  windowAudio?: "exclude" | "window" | "system";
+};
 
 type HostStatus =
   | "creating"
@@ -112,6 +120,26 @@ function isTakeoverDisconnect(reason?: DisconnectReason) {
 
 function makeControllerId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
+function getDisplayMediaOptions(): DisplayMediaOptionsWithAudioHints {
+  return {
+    audio: true,
+    video: true,
+    preferCurrentTab: false,
+    selfBrowserSurface: "exclude",
+    surfaceSwitching: "include",
+    systemAudio: "include",
+    windowAudio: "system",
+  };
+}
+
+function getNoAudioMessage() {
+  if (navigator.userAgent.includes("Firefox")) {
+    return "Firefox did not share tab audio. Try Chrome or Edge on desktop.";
+  }
+
+  return NO_AUDIO_MESSAGE;
 }
 
 export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
@@ -505,15 +533,14 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
         await stopSharing();
       }
 
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        audio: true,
-        video: true,
-      });
+      const stream = await navigator.mediaDevices.getDisplayMedia(
+        getDisplayMediaOptions(),
+      );
       const [audioTrack] = stream.getAudioTracks();
 
       if (!audioTrack) {
         stopTracks(stream);
-        setError(NO_AUDIO_MESSAGE);
+        setError(getNoAudioMessage());
         return;
       }
 
@@ -669,7 +696,7 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
           <ol className="grid gap-3 text-base font-bold leading-6 text-stone-200">
             <li>1. Play music in another tab.</li>
             <li>2. Click Share music.</li>
-            <li>3. Choose the music tab and tick Share tab audio.</li>
+            <li>3. Pick that tab and turn on tab audio.</li>
           </ol>
         </div>
 
@@ -729,7 +756,7 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
         </div>
         {showLocalHelper ? (
           <p className="mt-3 text-sm font-semibold leading-5 text-stone-400">
-            Testing with phones: host from localhost in Chrome, guests use this QR.
+            Phones should scan this QR, not localhost.
           </p>
         ) : null}
       </section>

@@ -8,12 +8,11 @@ Core goal:
 Play song. Show QR. People hear it.
 ```
 
-The host shares audio from a browser tab into a LiveKit room. Feefee shows a QR
-code and also lists live rooms at `/rooms`. Guests scan the QR or tap a live
-room, Feefee tries to join audio immediately, and they hear the host's audio.
-While listening, guests can switch rooms from the same screen with Previous,
-Random, Next, or a room picker. Hosts can copy a private host control link to
-run the same room again later.
+The host shares one browser tab's audio into a LiveKit room. Feefee shows a QR
+code and lists active DJs at `/rooms`. Guests scan or pick a room, Feefee tries
+to join immediately, and they listen in headphones. While listening, guests can
+switch with Previous, Random, Next, or the room picker. Hosts can copy a private
+host link to reuse the same room.
 
 ## LiveKit Cloud Setup
 
@@ -62,23 +61,24 @@ Open http://localhost:3000.
 
 ## Test With 3 Friends
 
-1. Open `/host` in desktop Chrome.
+1. Open `/host` in desktop Chrome or Edge.
 2. Type a room name, for example `gold pulse`, and start the room.
 3. Set a short DJ name or keep the generated name.
 4. Copy the host control link if you want to keep this room for later.
 5. Open YouTube, Spotify Web, SoundCloud, or another audio tab and start a song.
 6. In Feefee, click Share music.
-7. Choose the tab playing music and enable Share tab audio.
+7. Pick the tab playing music and turn on tab audio.
 8. Show the QR code or send friends to `/rooms`.
-9. Friends scan the QR or choose the live room and put in headphones. Feefee tries to join audio immediately.
+9. Friends scan the QR or choose the live room and put in headphones. Feefee tries to join immediately.
 10. Friends can use Previous, Random, Next, or the inline room picker to switch rooms.
 11. Stop sharing to confirm guests see that the host stopped sharing.
 12. End room when done.
 
 ## Known Technical Limitations
 
-- Hosting is desktop Chrome-first because browser tab-audio capture support varies.
-- The host must choose the music tab and enable Share tab audio.
+- Hosting works best in desktop Chrome or Edge because browser tab-audio capture support varies.
+- Firefox can join as a guest, but it may not provide tab audio when hosting.
+- The host must pick the music tab and turn on tab audio.
 - QR and live-room links auto-start the listener join flow with `?join=1`, but some mobile browsers may still require one extra tap before audio playback.
 - The host control link is private. Anyone with that link can control that room.
 - Typed room names are exact slugs. If a typed name is already active, only its existing host control link can control it.

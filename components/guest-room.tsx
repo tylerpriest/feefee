@@ -57,17 +57,17 @@ function statusText(status: GuestStatus) {
 function statusDetail(status: GuestStatus) {
   switch (status) {
     case "idle":
-      return "Tap Join audio when you are ready.";
+      return "Tap Join audio to listen.";
     case "connecting":
-      return "Joining the room.";
+      return "Joining now.";
     case "waiting":
-      return "You're in. Waiting for the host to share music.";
+      return "Waiting for the host to start sharing.";
     case "connected":
-      return "Audio is connected.";
+      return "Connected. If you hear nothing, tap Start audio.";
     case "playing":
-      return "Keep your headphones in.";
+      return "Playing in your headphones.";
     case "stopped":
-      return "Stay here if the host starts again.";
+      return "The host stopped. Stay here or switch rooms.";
     case "disconnected":
       return "You left the room.";
     case "error":
@@ -81,7 +81,9 @@ function listenerLabel(count: number) {
 
 export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
   const [activeRoomName, setActiveRoomName] = useState(roomName);
-  const [status, setStatus] = useState<GuestStatus>("idle");
+  const [status, setStatus] = useState<GuestStatus>(
+    autoJoin ? "connecting" : "idle",
+  );
   const [error, setError] = useState("");
   const [needsAudioTap, setNeedsAudioTap] = useState(false);
   const [{ rooms, error: roomsError, isLoading }, setRoomsState] =
@@ -147,7 +149,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
     } catch {
       setNeedsAudioTap(true);
       setStatus(remoteAudioTrackRef.current ? "connected" : "waiting");
-      setError("Tap Start audio to begin playback.");
+      setError("Tap Start audio if nothing plays.");
     }
   }, []);
 
@@ -190,7 +192,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
 
   const connectRoom = useCallback(
     async (nextRoomName: string) => {
-      if (status === "connecting") {
+      if (roomRef.current && status === "connecting") {
         return;
       }
 
@@ -411,6 +413,15 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
     status === "connected" ||
     status === "playing" ||
     status === "stopped";
+  const primaryButtonLabel = isConnecting
+    ? "Joining..."
+    : needsAudioTap
+      ? "Start audio"
+      : isInRoom
+        ? status === "playing"
+          ? "Playing"
+          : "Joined"
+        : "Join audio";
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 py-6">
@@ -455,11 +466,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
           disabled={!canJoin || isConnecting}
           className="flex h-16 w-full items-center justify-center rounded-lg bg-lime-300 px-6 text-xl font-black text-stone-950 transition hover:bg-lime-200 focus:outline-none focus:ring-4 focus:ring-lime-300/40 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
         >
-          {isConnecting
-            ? "Joining..."
-            : needsAudioTap
-              ? "Start audio"
-              : "Join audio"}
+          {primaryButtonLabel}
         </button>
 
         <button
