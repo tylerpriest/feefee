@@ -10,9 +10,10 @@ Play song. Show QR. People hear it.
 
 The host shares audio from a browser tab into a LiveKit room. Feefee shows a QR
 code and also lists live rooms at `/rooms`. Guests scan the QR or tap a live
-room, join audio, and hear the host's audio. While listening, guests can switch
-rooms from the same screen with Previous, Random, Next, or a room picker. Hosts
-can copy a private host control link to run the same room again later.
+room, Feefee tries to join audio immediately, and they hear the host's audio.
+While listening, guests can switch rooms from the same screen with Previous,
+Random, Next, or a room picker. Hosts can copy a private host control link to
+run the same room again later.
 
 ## LiveKit Cloud Setup
 
@@ -48,7 +49,8 @@ Open http://localhost:3000.
 - `/host` lets the host type a room name and starts that exact slug.
 - `/host/[roomId]` controls an existing host room when the browser has its private control token.
 - `/rooms` lists active Feefee rooms.
-- `/room/[roomId]` joins a room directly and lets listeners switch rooms without going back to `/rooms`.
+- `/room/[roomId]` opens a room manually.
+- `/room/[roomId]?join=1` auto-starts the listener join flow and lets listeners switch rooms without going back to `/rooms`.
 
 ## Vercel Deployment
 
@@ -68,7 +70,7 @@ Open http://localhost:3000.
 6. In Feefee, click Share music.
 7. Choose the tab playing music and enable Share tab audio.
 8. Show the QR code or send friends to `/rooms`.
-9. Friends scan the QR or choose the live room, put in headphones, and join audio.
+9. Friends scan the QR or choose the live room and put in headphones. Feefee tries to join audio immediately.
 10. Friends can use Previous, Random, Next, or the inline room picker to switch rooms.
 11. Stop sharing to confirm guests see that the host stopped sharing.
 12. End room when done.
@@ -77,6 +79,6 @@ Open http://localhost:3000.
 
 - Hosting is desktop Chrome-first because browser tab-audio capture support varies.
 - The host must choose the music tab and enable Share tab audio.
-- Guests must tap Join audio because mobile browsers require a user gesture before audio playback.
+- QR and live-room links auto-start the listener join flow with `?join=1`, but some mobile browsers may still require one extra tap before audio playback.
 - The host control link is private. Anyone with that link can control that room.
 - Typed room names are exact slugs. If a typed name is already active, only its existing host control link can control it.

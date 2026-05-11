@@ -145,7 +145,7 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
       return "";
     }
 
-    return `${appOrigin}/room/${roomName}`;
+    return `${appOrigin}/room/${roomName}?join=1`;
   }, [appOrigin, roomName]);
 
   const hostControlLink = useMemo(() => {
