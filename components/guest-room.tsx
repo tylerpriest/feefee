@@ -1,6 +1,7 @@
 "use client";
 
 import { RemoteAudioTrack, Room, RoomEvent, Track } from "livekit-client";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchLiveRooms } from "@/lib/client-rooms";
 import {
@@ -97,6 +98,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
   const hasAutoJoinedRef = useRef(false);
   const roomRef = useRef<Room | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const switcherRef = useRef<HTMLDetailsElement | null>(null);
   const remoteAudioTrackRef = useRef<RemoteAudioTrack | null>(null);
   const connectionRunRef = useRef(0);
 
@@ -104,11 +106,22 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
     () => rooms.find((room) => room.roomName === activeRoomName),
     [activeRoomName, rooms],
   );
-  const activeRoomTitle = activeRoom?.hostName ?? titleFromRoomName(activeRoomName);
-  const currentRoomIndex = rooms.findIndex(
+  const liveRooms = useMemo(
+    () => rooms.filter((room) => room.isSharing),
+    [rooms],
+  );
+  const waitingRooms = useMemo(
+    () => rooms.filter((room) => !room.isSharing),
+    [rooms],
+  );
+  const activeRoomTitle =
+    activeRoom?.hostName ?? titleFromRoomName(activeRoomName);
+  const currentLiveRoomIndex = liveRooms.findIndex(
     (room) => room.roomName === activeRoomName,
   );
-  const canCycleRooms = rooms.length > 1;
+  const canSwitchLiveRooms = liveRooms.some(
+    (room) => room.roomName !== activeRoomName,
+  );
 
   const detachAudio = useCallback(() => {
     const audioElement = audioRef.current;
@@ -319,6 +332,17 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
     setError("");
   }, [disconnectCurrentRoom]);
 
+  const openSwitcher = useCallback(() => {
+    const switcher = switcherRef.current;
+
+    if (!switcher) {
+      return;
+    }
+
+    switcher.open = true;
+    switcher.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
   useEffect(() => {
     return () => {
       connectionRunRef.current += 1;
@@ -375,23 +399,27 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
 
   const switchByOffset = useCallback(
     (offset: number) => {
-      if (rooms.length === 0) {
+      if (!canSwitchLiveRooms) {
         return;
       }
 
-      const baseIndex = currentRoomIndex >= 0 ? currentRoomIndex : 0;
-      const nextIndex = (baseIndex + offset + rooms.length) % rooms.length;
+      const baseIndex =
+        currentLiveRoomIndex >= 0 ? currentLiveRoomIndex : offset > 0 ? -1 : 0;
+      const nextIndex =
+        (baseIndex + offset + liveRooms.length) % liveRooms.length;
+      const nextRoom = liveRooms[nextIndex];
 
-      void connectRoom(rooms[nextIndex].roomName);
+      if (nextRoom) {
+        void connectRoom(nextRoom.roomName);
+      }
     },
-    [connectRoom, currentRoomIndex, rooms],
+    [canSwitchLiveRooms, connectRoom, currentLiveRoomIndex, liveRooms],
   );
 
   const switchRandom = useCallback(() => {
-    const choices =
-      rooms.length > 1
-        ? rooms.filter((room) => room.roomName !== activeRoomName)
-        : rooms;
+    const choices = liveRooms.filter(
+      (room) => room.roomName !== activeRoomName,
+    );
 
     if (choices.length === 0) {
       return;
@@ -400,7 +428,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
     const room = choices[Math.floor(Math.random() * choices.length)];
 
     void connectRoom(room.roomName);
-  }, [activeRoomName, connectRoom, rooms]);
+  }, [activeRoomName, connectRoom, liveRooms]);
 
   const isConnecting = status === "connecting";
   const canJoin =
@@ -423,11 +451,69 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
           : "Joined"
         : "Join audio";
 
+  const renderRoomButton = (room: LiveRoomSummary) => {
+    const isCurrent = room.roomName === activeRoomName;
+
+    return (
+      <button
+        key={room.roomName}
+        type="button"
+        onClick={() => void connectRoom(room.roomName)}
+        disabled={isCurrent || isConnecting}
+        className="rounded-lg border border-stone-800 bg-stone-900/70 p-3 text-left transition hover:border-[#c2ad78]/40 disabled:cursor-default disabled:border-[#c2ad78]/50"
+      >
+        <span className="flex items-start justify-between gap-3">
+          <span>
+            <span className="block text-lg font-black text-stone-50">
+              {room.hostName}
+            </span>
+            <span className="mt-1 block text-xs font-semibold text-stone-500">
+              {listenerLabel(room.listenerCount)}
+            </span>
+          </span>
+          <span
+            className={`rounded-full px-2 py-1 text-xs font-black ${
+              room.isSharing
+                ? "bg-[#c2ad78] text-stone-950"
+                : "bg-stone-800 text-stone-300"
+            }`}
+          >
+            {isCurrent ? "Here" : room.isSharing ? "Live" : "Waiting"}
+          </span>
+        </span>
+      </button>
+    );
+  };
+
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 py-6">
+      <nav className="mb-6 flex items-center justify-between gap-3">
+        <Link
+          href="/"
+          className="text-sm font-black uppercase tracking-[0.16em] text-[#c2ad78]"
+        >
+          Feefee
+        </Link>
+        <div className="flex min-w-0 items-center gap-2">
+          <Link
+            href="/rooms"
+            className="rounded-md border border-stone-700 px-3 py-2 text-sm font-black text-stone-200 transition hover:bg-stone-900"
+          >
+            Rooms
+          </Link>
+          <button
+            type="button"
+            onClick={openSwitcher}
+            className="rounded-md bg-[#c2ad78] px-3 py-2 text-sm font-black text-stone-950 transition hover:bg-[#d2c18f]"
+          >
+            Switch
+          </button>
+        </div>
+      </nav>
+
       <header className="mb-6">
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#c2ad78]">
-          Listening
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-stone-500">
+          Listening now
         </p>
         <h1 className="mt-3 break-words text-4xl font-black leading-none text-stone-50">
           {activeRoomTitle}
@@ -479,16 +565,19 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
         </button>
       </div>
 
-      <details className="mt-6 rounded-lg border border-stone-800 bg-stone-950/42 p-4">
+      <details
+        ref={switcherRef}
+        className="mt-6 rounded-lg border border-stone-800 bg-stone-950/42 p-4"
+      >
         <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] text-stone-400">
-          Switch room
+          Switch room here
         </summary>
 
         <div className="mt-4 grid grid-cols-3 gap-2">
           <button
             type="button"
             onClick={() => switchByOffset(-1)}
-            disabled={!canCycleRooms || isConnecting}
+            disabled={!canSwitchLiveRooms || isConnecting}
             className="h-12 rounded-md border border-stone-700 text-sm font-black text-stone-100 disabled:cursor-not-allowed disabled:text-stone-600"
           >
             Previous
@@ -496,7 +585,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
           <button
             type="button"
             onClick={switchRandom}
-            disabled={!canCycleRooms || isConnecting}
+            disabled={!canSwitchLiveRooms || isConnecting}
             className="h-12 rounded-md bg-stone-100 text-sm font-black text-stone-950 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
           >
             Random
@@ -504,7 +593,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
           <button
             type="button"
             onClick={() => switchByOffset(1)}
-            disabled={!canCycleRooms || isConnecting}
+            disabled={!canSwitchLiveRooms || isConnecting}
             className="h-12 rounded-md border border-stone-700 text-sm font-black text-stone-100 disabled:cursor-not-allowed disabled:text-stone-600"
           >
             Next
@@ -529,40 +618,38 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
           </p>
         ) : null}
 
-        <div className="mt-4 grid gap-2">
-          {rooms.map((room) => {
-            const isCurrent = room.roomName === activeRoomName;
-
-            return (
-              <button
-                key={room.roomName}
-                type="button"
-                onClick={() => void connectRoom(room.roomName)}
-                disabled={isCurrent || isConnecting}
-                className="rounded-lg border border-stone-800 bg-stone-900/70 p-3 text-left transition hover:border-[#c2ad78]/40 disabled:cursor-default disabled:border-[#c2ad78]/50"
-              >
-                <span className="flex items-start justify-between gap-3">
-                  <span>
-                    <span className="block text-lg font-black text-stone-50">
-                      {room.hostName}
-                    </span>
-                    <span className="mt-1 block text-xs font-semibold text-stone-500">
-                      {listenerLabel(room.listenerCount)}
-                    </span>
-                  </span>
-                  <span
-                    className={`rounded-full px-2 py-1 text-xs font-black ${
-                      room.isSharing
-                        ? "bg-[#c2ad78] text-stone-950"
-                        : "bg-stone-800 text-stone-300"
-                    }`}
-                  >
-                    {isCurrent ? "Here" : room.isSharing ? "Live" : "Waiting"}
-                  </span>
+        <div className="mt-4 grid gap-4">
+          {liveRooms.length > 0 ? (
+            <section className="rounded-lg border border-[#c2ad78]/30 bg-[#c2ad78]/5 p-3">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="text-sm font-black uppercase tracking-[0.16em] text-[#c2ad78]">
+                  Live
+                </h2>
+                <span className="text-xs font-black text-stone-500">
+                  {liveRooms.length}
                 </span>
-              </button>
-            );
-          })}
+              </div>
+              <div className="grid gap-2">
+                {liveRooms.map((room) => renderRoomButton(room))}
+              </div>
+            </section>
+          ) : null}
+
+          {waitingRooms.length > 0 ? (
+            <section className="rounded-lg border border-stone-800 bg-stone-950/40 p-3">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="text-sm font-black uppercase tracking-[0.16em] text-stone-500">
+                  Waiting
+                </h2>
+                <span className="text-xs font-black text-stone-600">
+                  {waitingRooms.length}
+                </span>
+              </div>
+              <div className="grid gap-2">
+                {waitingRooms.map((room) => renderRoomButton(room))}
+              </div>
+            </section>
+          ) : null}
         </div>
       </details>
 

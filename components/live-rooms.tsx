@@ -21,6 +21,8 @@ export function LiveRooms() {
     error: "",
     isLoading: true,
   });
+  const liveRooms = rooms.filter((room) => room.isSharing);
+  const waitingRooms = rooms.filter((room) => !room.isSharing);
 
   useEffect(() => {
     let isActive = true;
@@ -63,9 +65,12 @@ export function LiveRooms() {
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 py-6">
       <header className="mb-7 flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#c2ad78]">
+          <Link
+            href="/"
+            className="text-sm font-semibold uppercase tracking-[0.16em] text-[#c2ad78]"
+          >
             Feefee
-          </p>
+          </Link>
           <h1 className="mt-3 text-4xl font-black leading-none text-stone-50">
             Live rooms
           </h1>
@@ -108,40 +113,90 @@ export function LiveRooms() {
         </section>
       ) : null}
 
-      <div className="grid gap-3">
-        {rooms.map((room) => (
-          <Link
-            key={room.roomName}
-            href={`/room/${room.roomName}?join=1`}
-            className="rounded-lg border border-stone-700/80 bg-stone-950/58 p-5 transition hover:border-[#c2ad78]/40"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-2xl font-black text-stone-50">
-                  {room.hostName}
-                </p>
-                <p className="mt-1 text-sm font-semibold text-stone-400">
-                  {room.roomName}
-                </p>
-              </div>
-              <span
-                className={`rounded-full px-3 py-1 text-sm font-black ${
-                  room.isSharing
-                    ? "bg-[#c2ad78] text-stone-950"
-                    : "bg-stone-800 text-stone-300"
-                }`}
-              >
-                {room.isSharing ? "Live" : "Waiting"}
+      <div className="grid gap-5">
+        {liveRooms.length > 0 ? (
+          <section className="rounded-lg border border-[#c2ad78]/30 bg-[#c2ad78]/5 p-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-sm font-black uppercase tracking-[0.16em] text-[#c2ad78]">
+                Live
+              </h2>
+              <span className="text-xs font-black text-stone-500">
+                {liveRooms.length}
               </span>
             </div>
-            <p className="mt-4 text-base font-bold text-stone-300">
-              {listenerLabel(room.listenerCount)}
-            </p>
-            <p className="mt-3 text-sm font-black text-[#c2ad78]">
-              Join audio
-            </p>
-          </Link>
-        ))}
+            <div className="grid gap-3">
+              {liveRooms.map((room) => (
+                <Link
+                  key={room.roomName}
+                  href={`/room/${room.roomName}?join=1`}
+                  className="rounded-lg border border-stone-700/80 bg-stone-950/58 p-5 transition hover:border-[#c2ad78]/40"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-2xl font-black text-stone-50">
+                        {room.hostName}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-stone-400">
+                        {room.roomName}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-[#c2ad78] px-3 py-1 text-sm font-black text-stone-950">
+                      Live
+                    </span>
+                  </div>
+                  <p className="mt-4 text-base font-bold text-stone-300">
+                    {listenerLabel(room.listenerCount)}
+                  </p>
+                  <p className="mt-3 text-sm font-black text-[#c2ad78]">
+                    Join audio
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {waitingRooms.length > 0 ? (
+          <section className="rounded-lg border border-stone-800 bg-stone-950/40 p-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-sm font-black uppercase tracking-[0.16em] text-stone-500">
+                Waiting
+              </h2>
+              <span className="text-xs font-black text-stone-600">
+                {waitingRooms.length}
+              </span>
+            </div>
+            <div className="grid gap-3">
+              {waitingRooms.map((room) => (
+                <Link
+                  key={room.roomName}
+                  href={`/room/${room.roomName}?join=1`}
+                  className="rounded-lg border border-stone-800 bg-stone-900/70 p-5 transition hover:border-[#c2ad78]/40"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-2xl font-black text-stone-50">
+                        {room.hostName}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-stone-400">
+                        {room.roomName}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-stone-800 px-3 py-1 text-sm font-black text-stone-300">
+                      Waiting
+                    </span>
+                  </div>
+                  <p className="mt-4 text-base font-bold text-stone-300">
+                    {listenerLabel(room.listenerCount)}
+                  </p>
+                  <p className="mt-3 text-sm font-black text-[#c2ad78]">
+                    Open room
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </div>
     </main>
   );

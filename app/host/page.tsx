@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { HostStartForm } from "@/components/host-start-form";
 import { createControlToken } from "@/lib/control-token";
 import { isValidRoomName, randomRoomName, slugifyRoomName } from "@/lib/rooms";
@@ -11,8 +12,20 @@ type HostPageProps = {
   }>;
 };
 
+async function getRequestOrigin() {
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const protocol =
+    requestHeaders.get("x-forwarded-proto")?.split(",")[0]?.trim() ?? "http";
+
+  return host ? `${protocol}://${host}` : "";
+}
+
 export default async function HostPage({ searchParams }: HostPageProps) {
-  const { room } = await searchParams;
+  const [{ room }, requestOrigin] = await Promise.all([
+    searchParams,
+    getRequestOrigin(),
+  ]);
   const requestedRoom = Array.isArray(room) ? room[0] : room;
   const suggestedRoomName = randomRoomName();
   const roomName = requestedRoom ? slugifyRoomName(requestedRoom) : "";
@@ -44,6 +57,7 @@ export default async function HostPage({ searchParams }: HostPageProps) {
       <HostStartForm
         suggestedRoomName={suggestedRoomName}
         initialRoomName={requestedRoom}
+        requestOrigin={requestOrigin}
       />
     </main>
   );

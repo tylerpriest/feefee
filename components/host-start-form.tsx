@@ -6,15 +6,18 @@ import { isValidRoomName, slugifyRoomName } from "@/lib/rooms";
 type HostStartFormProps = {
   suggestedRoomName: string;
   initialRoomName?: string;
+  requestOrigin: string;
 };
 
 export function HostStartForm({
   suggestedRoomName,
   initialRoomName,
+  requestOrigin,
 }: HostStartFormProps) {
   const [roomName, setRoomName] = useState(initialRoomName ?? suggestedRoomName);
   const roomSlug = useMemo(() => slugifyRoomName(roomName), [roomName]);
   const isReady = isValidRoomName(roomSlug);
+  const guestLink = `${requestOrigin}/room/${roomSlug || "your-room"}?join=1`;
 
   return (
     <form action="/host" className="mt-8 grid gap-4">
@@ -36,7 +39,7 @@ export function HostStartForm({
           Guest link
         </p>
         <p className="mt-2 break-all text-lg font-black text-stone-100">
-          /room/{roomSlug || "your-room"}?join=1
+          {guestLink}
         </p>
       </div>
 
