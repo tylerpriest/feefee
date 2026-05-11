@@ -31,11 +31,11 @@ import {
 } from "@/lib/room-metadata";
 
 const NO_AUDIO_MESSAGE =
-  "No audio came through. Pick the music tab and turn on tab audio.";
+  "Choose the music tab and turn on tab audio.";
 const UNSUPPORTED_CAPTURE_MESSAGE =
-  "This browser cannot share tab audio. Try Chrome or Edge on desktop.";
+  "Use desktop Chrome or Edge to share tab audio.";
 const MISSING_CONTROL_MESSAGE =
-  "This host link is missing its control token. Start a new room from /host.";
+  "This host link cannot control the room. Start a new room.";
 
 type DisplayMediaOptionsWithAudioHints = DisplayMediaStreamOptions & {
   preferCurrentTab?: boolean;
@@ -663,7 +663,7 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
 
       <section className="rounded-lg border border-stone-700/80 bg-stone-950/58 p-4">
         <label className="text-sm font-semibold uppercase tracking-[0.16em] text-stone-400">
-          DJ name
+          Room title
           <input
             value={hostName}
             onChange={(event) => setHostName(event.target.value)}

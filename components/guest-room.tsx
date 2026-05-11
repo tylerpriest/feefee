@@ -10,6 +10,12 @@ import {
   requestLiveKitToken,
   withTimeout,
 } from "@/lib/client-token";
+import {
+  canSwitchToAnotherLiveRoom,
+  liveRoomByOffset,
+  randomLiveRoom,
+  splitRoomsBySharing,
+} from "@/lib/room-navigation";
 import type { LiveRoomSummary } from "@/lib/room-metadata";
 import { titleFromRoomName } from "@/lib/room-metadata";
 
@@ -41,7 +47,7 @@ function statusText(status: GuestStatus) {
     case "connecting":
       return "Joining";
     case "waiting":
-      return "No music yet";
+      return "Waiting for music";
     case "connected":
       return "Connected";
     case "playing":
@@ -58,21 +64,21 @@ function statusText(status: GuestStatus) {
 function statusDetail(status: GuestStatus) {
   switch (status) {
     case "idle":
-      return "Tap Join audio to listen.";
+      return "Tap Join audio.";
     case "connecting":
-      return "Joining now.";
+      return "Opening the room.";
     case "waiting":
-      return "The host has not started sharing.";
+      return "Host hasn't started sharing yet.";
     case "connected":
-      return "Connected. If you hear nothing, tap Start audio.";
+      return "Tap Start audio if you hear nothing.";
     case "playing":
       return "Playing in your headphones.";
     case "stopped":
-      return "The host stopped. Stay here or switch rooms.";
+      return "Stay here or change rooms.";
     case "disconnected":
       return "You left the room.";
     case "error":
-      return "Try joining again.";
+      return "Try again.";
   }
 }
 
@@ -105,21 +111,15 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
     () => rooms.find((room) => room.roomName === activeRoomName),
     [activeRoomName, rooms],
   );
-  const liveRooms = useMemo(
-    () => rooms.filter((room) => room.isSharing),
-    [rooms],
-  );
-  const waitingRooms = useMemo(
-    () => rooms.filter((room) => !room.isSharing),
+  const { liveRooms, waitingRooms } = useMemo(
+    () => splitRoomsBySharing(rooms),
     [rooms],
   );
   const activeRoomTitle =
     activeRoom?.hostName ?? titleFromRoomName(activeRoomName);
-  const currentLiveRoomIndex = liveRooms.findIndex(
-    (room) => room.roomName === activeRoomName,
-  );
-  const canSwitchLiveRooms = liveRooms.some(
-    (room) => room.roomName !== activeRoomName,
+  const canSwitchLiveRooms = canSwitchToAnotherLiveRoom(
+    liveRooms,
+    activeRoomName,
   );
 
   const detachAudio = useCallback(() => {
@@ -387,35 +387,21 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
 
   const switchByOffset = useCallback(
     (offset: number) => {
-      if (!canSwitchLiveRooms) {
-        return;
-      }
-
-      const baseIndex =
-        currentLiveRoomIndex >= 0 ? currentLiveRoomIndex : offset > 0 ? -1 : 0;
-      const nextIndex =
-        (baseIndex + offset + liveRooms.length) % liveRooms.length;
-      const nextRoom = liveRooms[nextIndex];
+      const nextRoom = liveRoomByOffset(liveRooms, activeRoomName, offset);
 
       if (nextRoom) {
         void connectRoom(nextRoom.roomName);
       }
     },
-    [canSwitchLiveRooms, connectRoom, currentLiveRoomIndex, liveRooms],
+    [activeRoomName, connectRoom, liveRooms],
   );
 
   const switchRandom = useCallback(() => {
-    const choices = liveRooms.filter(
-      (room) => room.roomName !== activeRoomName,
-    );
+    const room = randomLiveRoom(liveRooms, activeRoomName);
 
-    if (choices.length === 0) {
-      return;
+    if (room) {
+      void connectRoom(room.roomName);
     }
-
-    const room = choices[Math.floor(Math.random() * choices.length)];
-
-    void connectRoom(room.roomName);
   }, [activeRoomName, connectRoom, liveRooms]);
 
   const isConnecting = status === "connecting";
@@ -491,9 +477,6 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
         <h1 className="mt-3 break-words text-4xl font-black leading-none text-stone-50">
           {activeRoomTitle}
         </h1>
-        <p className="mt-2 break-all text-sm font-semibold text-stone-500">
-          {activeRoomName}
-        </p>
       </header>
 
       <p className="mb-5 text-3xl font-black text-stone-50">
@@ -542,7 +525,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
         className="mt-6 rounded-lg border border-stone-800 bg-stone-950/42 p-4"
       >
         <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] text-stone-400">
-          Switch room here
+          Change room
         </summary>
 
         <div className="mt-4 grid grid-cols-3 gap-2">
@@ -595,7 +578,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
             <section className="rounded-lg border border-[#c2ad78]/30 bg-[#c2ad78]/5 p-3">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="text-sm font-black uppercase tracking-[0.16em] text-[#c2ad78]">
-                  Live
+                  Playing now
                 </h2>
                 <span className="text-xs font-black text-stone-500">
                   {liveRooms.length}
@@ -617,7 +600,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
             <section className="rounded-lg border border-stone-800 bg-stone-950/40 p-3">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="text-sm font-black uppercase tracking-[0.16em] text-stone-500">
-                  Waiting
+                  Not playing yet
                 </h2>
                 <span className="text-xs font-black text-stone-600">
                   {waitingRooms.length}

@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { fetchLiveRooms } from "@/lib/client-rooms";
+import { splitRoomsBySharing } from "@/lib/room-navigation";
 import type { LiveRoomSummary } from "@/lib/room-metadata";
+import { slugifyRoomName } from "@/lib/rooms";
 
 type RoomsState = {
   rooms: LiveRoomSummary[];
@@ -16,6 +18,8 @@ function listenerLabel(count: number) {
 }
 
 function RoomLink({ room }: { room: LiveRoomSummary }) {
+  const shouldShowRoomName = slugifyRoomName(room.hostName) !== room.roomName;
+
   return (
     <Link
       href={`/room/${room.roomName}?join=1`}
@@ -28,9 +32,11 @@ function RoomLink({ room }: { room: LiveRoomSummary }) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-2xl font-black text-stone-50">{room.hostName}</p>
-          <p className="mt-1 text-sm font-semibold text-stone-400">
-            {room.roomName}
-          </p>
+          {shouldShowRoomName ? (
+            <p className="mt-1 text-sm font-semibold text-stone-400">
+              {room.roomName}
+            </p>
+          ) : null}
         </div>
         <span
           className={`rounded-full px-3 py-1 text-sm font-black ${
@@ -58,8 +64,10 @@ export function LiveRooms() {
     error: "",
     isLoading: true,
   });
-  const liveRooms = rooms.filter((room) => room.isSharing);
-  const waitingRooms = rooms.filter((room) => !room.isSharing);
+  const { liveRooms, waitingRooms } = useMemo(
+    () => splitRoomsBySharing(rooms),
+    [rooms],
+  );
 
   useEffect(() => {
     let isActive = true;
@@ -112,7 +120,7 @@ export function LiveRooms() {
             Live rooms
           </h1>
           <p className="mt-2 text-base font-semibold leading-6 text-stone-400">
-            Pick a DJ and listen.
+            Pick a room and listen.
           </p>
         </div>
         <Link
@@ -155,7 +163,7 @@ export function LiveRooms() {
           <section className="rounded-lg border border-[#c2ad78]/30 bg-[#c2ad78]/5 p-3">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="text-sm font-black uppercase tracking-[0.16em] text-[#c2ad78]">
-                Live
+                Playing now
               </h2>
               <span className="text-xs font-black text-stone-500">
                 {liveRooms.length}
@@ -179,7 +187,7 @@ export function LiveRooms() {
           <section className="rounded-lg border border-stone-800 bg-stone-950/40 p-3">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="text-sm font-black uppercase tracking-[0.16em] text-stone-500">
-                Waiting
+                Not playing yet
               </h2>
               <span className="text-xs font-black text-stone-600">
                 {waitingRooms.length}

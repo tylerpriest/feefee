@@ -1,6 +1,6 @@
 # Feefee
 
-Feefee is a small web app for broadcasting one browser tab's audio to friends.
+Feefee is a small web app for sharing one browser tab's audio with friends.
 
 Core goal:
 
@@ -9,7 +9,7 @@ Play song. Show QR. People hear it.
 ```
 
 The host shares one browser tab's audio into a LiveKit room. Feefee shows a QR
-code and lists active DJs at `/rooms`. Guests scan or pick a room, Feefee tries
+code and lists live rooms at `/rooms`. Guests scan or pick a room, Feefee tries
 to join immediately, and they listen in headphones. While listening, guests can
 switch with Previous, Random, Next, or the room picker. Hosts can copy a private
 host link to reuse the same room.
@@ -63,7 +63,7 @@ Open http://localhost:3000.
 
 1. Open `/host` in desktop Chrome or Edge.
 2. Type a room name, for example `gold pulse`, and start the room.
-3. Set a short DJ name or keep the generated name.
+3. Set a short room title or keep the generated name.
 4. Copy the host control link if you want to keep this room for later.
 5. Open YouTube, Spotify Web, SoundCloud, or another audio tab and start a song.
 6. In Feefee, click Share music.
