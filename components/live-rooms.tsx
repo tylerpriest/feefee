@@ -15,6 +15,43 @@ function listenerLabel(count: number) {
   return `${count} listener${count === 1 ? "" : "s"}`;
 }
 
+function RoomLink({ room }: { room: LiveRoomSummary }) {
+  return (
+    <Link
+      href={`/room/${room.roomName}?join=1`}
+      className={`rounded-lg border p-5 transition hover:border-[#c2ad78]/40 ${
+        room.isSharing
+          ? "border-stone-700/80 bg-stone-950/58"
+          : "border-stone-800 bg-stone-900/70"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-2xl font-black text-stone-50">{room.hostName}</p>
+          <p className="mt-1 text-sm font-semibold text-stone-400">
+            {room.roomName}
+          </p>
+        </div>
+        <span
+          className={`rounded-full px-3 py-1 text-sm font-black ${
+            room.isSharing
+              ? "bg-[#c2ad78] text-stone-950"
+              : "bg-stone-800 text-stone-300"
+          }`}
+        >
+          {room.isSharing ? "Live" : "Waiting"}
+        </span>
+      </div>
+      <p className="mt-4 text-base font-bold text-stone-300">
+        {listenerLabel(room.listenerCount)}
+      </p>
+      <p className="mt-3 text-sm font-black text-[#c2ad78]">
+        {room.isSharing ? "Join audio" : "Open room"}
+      </p>
+    </Link>
+  );
+}
+
 export function LiveRooms() {
   const [{ rooms, error, isLoading }, setRoomsState] = useState<RoomsState>({
     rooms: [],
@@ -114,7 +151,7 @@ export function LiveRooms() {
       ) : null}
 
       <div className="grid gap-5">
-        {liveRooms.length > 0 ? (
+        {rooms.length > 0 ? (
           <section className="rounded-lg border border-[#c2ad78]/30 bg-[#c2ad78]/5 p-3">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="text-sm font-black uppercase tracking-[0.16em] text-[#c2ad78]">
@@ -124,35 +161,17 @@ export function LiveRooms() {
                 {liveRooms.length}
               </span>
             </div>
-            <div className="grid gap-3">
-              {liveRooms.map((room) => (
-                <Link
-                  key={room.roomName}
-                  href={`/room/${room.roomName}?join=1`}
-                  className="rounded-lg border border-stone-700/80 bg-stone-950/58 p-5 transition hover:border-[#c2ad78]/40"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-2xl font-black text-stone-50">
-                        {room.hostName}
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-stone-400">
-                        {room.roomName}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-[#c2ad78] px-3 py-1 text-sm font-black text-stone-950">
-                      Live
-                    </span>
-                  </div>
-                  <p className="mt-4 text-base font-bold text-stone-300">
-                    {listenerLabel(room.listenerCount)}
-                  </p>
-                  <p className="mt-3 text-sm font-black text-[#c2ad78]">
-                    Join audio
-                  </p>
-                </Link>
-              ))}
-            </div>
+            {liveRooms.length > 0 ? (
+              <div className="grid gap-3">
+                {liveRooms.map((room) => (
+                  <RoomLink key={room.roomName} room={room} />
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-lg border border-stone-800 bg-stone-950/58 p-4 text-base font-bold text-stone-400">
+                No rooms are playing right now.
+              </p>
+            )}
           </section>
         ) : null}
 
@@ -168,31 +187,7 @@ export function LiveRooms() {
             </div>
             <div className="grid gap-3">
               {waitingRooms.map((room) => (
-                <Link
-                  key={room.roomName}
-                  href={`/room/${room.roomName}?join=1`}
-                  className="rounded-lg border border-stone-800 bg-stone-900/70 p-5 transition hover:border-[#c2ad78]/40"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-2xl font-black text-stone-50">
-                        {room.hostName}
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-stone-400">
-                        {room.roomName}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-stone-800 px-3 py-1 text-sm font-black text-stone-300">
-                      Waiting
-                    </span>
-                  </div>
-                  <p className="mt-4 text-base font-bold text-stone-300">
-                    {listenerLabel(room.listenerCount)}
-                  </p>
-                  <p className="mt-3 text-sm font-black text-[#c2ad78]">
-                    Open room
-                  </p>
-                </Link>
+                <RoomLink key={room.roomName} room={room} />
               ))}
             </div>
           </section>

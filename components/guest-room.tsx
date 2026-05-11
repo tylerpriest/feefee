@@ -41,7 +41,7 @@ function statusText(status: GuestStatus) {
     case "connecting":
       return "Joining";
     case "waiting":
-      return "Waiting for music";
+      return "No music yet";
     case "connected":
       return "Connected";
     case "playing":
@@ -62,7 +62,7 @@ function statusDetail(status: GuestStatus) {
     case "connecting":
       return "Joining now.";
     case "waiting":
-      return "Waiting for the host to start sharing.";
+      return "The host has not started sharing.";
     case "connected":
       return "Connected. If you hear nothing, tap Start audio.";
     case "playing":
@@ -98,7 +98,6 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
   const hasAutoJoinedRef = useRef(false);
   const roomRef = useRef<Room | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const switcherRef = useRef<HTMLDetailsElement | null>(null);
   const remoteAudioTrackRef = useRef<RemoteAudioTrack | null>(null);
   const connectionRunRef = useRef(0);
 
@@ -332,17 +331,6 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
     setError("");
   }, [disconnectCurrentRoom]);
 
-  const openSwitcher = useCallback(() => {
-    const switcher = switcherRef.current;
-
-    if (!switcher) {
-      return;
-    }
-
-    switcher.open = true;
-    switcher.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
-
   useEffect(() => {
     return () => {
       connectionRunRef.current += 1;
@@ -487,28 +475,13 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 py-6">
-      <nav className="mb-6 flex items-center justify-between gap-3">
+      <nav className="mb-8">
         <Link
           href="/"
           className="text-sm font-black uppercase tracking-[0.16em] text-[#c2ad78]"
         >
           Feefee
         </Link>
-        <div className="flex min-w-0 items-center gap-2">
-          <Link
-            href="/rooms"
-            className="rounded-md border border-stone-700 px-3 py-2 text-sm font-black text-stone-200 transition hover:bg-stone-900"
-          >
-            Rooms
-          </Link>
-          <button
-            type="button"
-            onClick={openSwitcher}
-            className="rounded-md bg-[#c2ad78] px-3 py-2 text-sm font-black text-stone-950 transition hover:bg-[#d2c18f]"
-          >
-            Switch
-          </button>
-        </div>
       </nav>
 
       <header className="mb-6">
@@ -566,7 +539,6 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
       </div>
 
       <details
-        ref={switcherRef}
         className="mt-6 rounded-lg border border-stone-800 bg-stone-950/42 p-4"
       >
         <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] text-stone-400">
@@ -619,7 +591,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
         ) : null}
 
         <div className="mt-4 grid gap-4">
-          {liveRooms.length > 0 ? (
+          {rooms.length > 0 ? (
             <section className="rounded-lg border border-[#c2ad78]/30 bg-[#c2ad78]/5 p-3">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="text-sm font-black uppercase tracking-[0.16em] text-[#c2ad78]">
@@ -629,9 +601,15 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
                   {liveRooms.length}
                 </span>
               </div>
-              <div className="grid gap-2">
-                {liveRooms.map((room) => renderRoomButton(room))}
-              </div>
+              {liveRooms.length > 0 ? (
+                <div className="grid gap-2">
+                  {liveRooms.map((room) => renderRoomButton(room))}
+                </div>
+              ) : (
+                <p className="rounded-lg border border-stone-800 bg-stone-950/58 p-3 text-sm font-bold leading-5 text-stone-400">
+                  No rooms are playing right now.
+                </p>
+              )}
             </section>
           ) : null}
 
