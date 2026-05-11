@@ -644,21 +644,22 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 py-6">
-      <header className="mb-5 flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#c2ad78]">
-            Host room
-          </p>
-          <h1 className="mt-2 text-4xl font-black leading-none text-stone-50">
-            {defaultHostName}
-          </h1>
-        </div>
+      <nav className="mb-8">
         <Link
-          href="/rooms"
-          className="rounded-md border border-stone-700 px-3 py-2 text-sm font-black text-stone-200"
+          href="/"
+          className="text-sm font-black uppercase tracking-[0.16em] text-[#c2ad78]"
         >
-          Rooms
+          Feefee
         </Link>
+      </nav>
+
+      <header className="mb-5">
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-stone-500">
+          Host control
+        </p>
+        <h1 className="mt-3 text-4xl font-black leading-none text-stone-50">
+          {defaultHostName}
+        </h1>
       </header>
 
       <section className="rounded-lg border border-stone-700/80 bg-stone-950/58 p-4">

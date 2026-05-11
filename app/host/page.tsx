@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import Link from "next/link";
 import { HostStartForm } from "@/components/host-start-form";
 import { createControlToken } from "@/lib/control-token";
 import { isValidRoomName, randomRoomName, slugifyRoomName } from "@/lib/rooms";
@@ -40,8 +41,16 @@ export default async function HostPage({ searchParams }: HostPageProps) {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-5 py-8">
-      <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-[#c2ad78]">
-        Feefee host
+      <nav className="mb-8">
+        <Link
+          href="/"
+          className="text-sm font-black uppercase tracking-[0.16em] text-[#c2ad78]"
+        >
+          Feefee
+        </Link>
+      </nav>
+      <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-stone-500">
+        Host
       </p>
       <h1 className="text-5xl font-black leading-none text-stone-50 sm:text-6xl">
         Start a room.
