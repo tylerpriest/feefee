@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyControlToken } from "@/lib/control-token";
+import { getLiveRoomSummary } from "@/lib/livekit-room-state";
 import {
   assertRoomControl,
   ensureFeefeeRoom,
@@ -8,7 +9,6 @@ import {
 import { isValidRoomName } from "@/lib/rooms";
 import {
   cleanHostName,
-  type FeefeeRoomMetadata,
   makeFeefeeMetadata,
   parseFeefeeMetadata,
   titleFromRoomName,
@@ -29,32 +29,10 @@ type PatchBody = {
   controllerId?: unknown;
 };
 
-type LiveKitRoomLike = {
-  name: string;
-  metadata?: string;
-  numParticipants: number;
-};
-
 function getHostControlToken(request: Request, roomName: string) {
   const controlToken = request.headers.get("x-feefee-control-token") ?? "";
 
   return verifyControlToken(roomName, controlToken) ? controlToken : null;
-}
-
-function publicRoomSummary(
-  room: LiveKitRoomLike,
-  metadata: FeefeeRoomMetadata,
-) {
-  return {
-    roomName: room.name,
-    hostName: metadata.hostName,
-    isSharing: metadata.isSharing,
-    controllerId: metadata.controllerId,
-    participantCount: room.numParticipants,
-    listenerCount: Math.max(0, room.numParticipants - 1),
-    createdAt: metadata.createdAt,
-    updatedAt: metadata.updatedAt,
-  };
 }
 
 export async function GET(_request: Request, { params }: RoomParams) {
@@ -65,7 +43,8 @@ export async function GET(_request: Request, { params }: RoomParams) {
   }
 
   try {
-    const [room] = await getRoomServiceClient().listRooms([roomName]);
+    const roomService = getRoomServiceClient();
+    const [room] = await roomService.listRooms([roomName]);
     const metadata = parseFeefeeMetadata(room?.metadata);
 
     if (!room || !metadata) {
@@ -76,7 +55,7 @@ export async function GET(_request: Request, { params }: RoomParams) {
     }
 
     return NextResponse.json(
-      { room: publicRoomSummary(room, metadata) },
+      { room: await getLiveRoomSummary(roomService, room, metadata) },
       {
         headers: {
           "Cache-Control": "no-store",
@@ -147,7 +126,8 @@ export async function PATCH(request: Request, { params }: RoomParams) {
     const metadata = parseFeefeeMetadata(updated.metadata);
 
     return NextResponse.json({
-      room: publicRoomSummary(
+      room: await getLiveRoomSummary(
+        roomService,
         updated,
         metadata ?? {
           app: "feefee",

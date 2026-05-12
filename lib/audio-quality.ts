@@ -96,6 +96,10 @@ function formatSampleRate(sampleRate?: number) {
   return `${Math.round(sampleRate / 100) / 10} kHz`;
 }
 
+function isExpectedMusicSampleRate(sampleRate: number) {
+  return sampleRate === 44_100 || sampleRate === 48_000;
+}
+
 function formatChannelCount(channelCount?: number) {
   if (!isPositiveFiniteNumber(channelCount)) {
     return "channels unknown";
@@ -158,10 +162,10 @@ export function formatAudioDiagnostics(
   if (
     diagnostics.sampleRate !== undefined &&
     diagnostics.sampleRate > 0 &&
-    diagnostics.sampleRate !== 48_000
+    !isExpectedMusicSampleRate(diagnostics.sampleRate)
   ) {
     warnings.push(
-      `Browser reported ${formatSampleRate(diagnostics.sampleRate)} instead of 48 kHz.`,
+      `Browser reported an unusual ${formatSampleRate(diagnostics.sampleRate)} capture rate.`,
     );
   }
 

@@ -904,7 +904,7 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
         <div className="rounded-lg border border-stone-800 bg-stone-950/42 p-4">
           <ol className="grid gap-3 text-base font-bold leading-6 text-stone-200">
             <li>1. Play music in another tab.</li>
-            <li>2. Click Share music.</li>
+            <li>2. Start sharing here.</li>
             <li>3. Pick that tab and turn on tab audio.</li>
           </ol>
         </div>
@@ -915,7 +915,7 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
           disabled={!isConnected || isSharing || isShareBusy || isLeaving}
           className="flex h-16 w-full items-center justify-center rounded-lg bg-[#c2ad78] px-6 text-xl font-black text-stone-950 transition hover:bg-[#d2c18f] focus:outline-none focus:ring-4 focus:ring-[#c2ad78]/25 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
         >
-          {isShareBusy ? "Sharing..." : isSharing ? "Music is live" : "Share music"}
+          {isShareBusy ? "Sharing..." : isSharing ? "Live now" : "Share music"}
         </button>
 
         <button

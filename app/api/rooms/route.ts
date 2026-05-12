@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
+import { getLiveRoomSummary } from "@/lib/livekit-room-state";
 import { getRoomServiceClient } from "@/lib/livekit-server";
-import {
-  type LiveRoomSummary,
-  parseFeefeeMetadata,
-} from "@/lib/room-metadata";
+import { type LiveRoomSummary, parseFeefeeMetadata } from "@/lib/room-metadata";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,24 +11,19 @@ export async function GET() {
     const roomService = getRoomServiceClient();
     const rooms = await roomService.listRooms();
 
-    const summaries = rooms
-      .map((room): LiveRoomSummary | null => {
-        const metadata = parseFeefeeMetadata(room.metadata);
+    const summaries = (
+      await Promise.all(
+        rooms.map(async (room): Promise<LiveRoomSummary | null> => {
+          const metadata = parseFeefeeMetadata(room.metadata);
 
-        if (!metadata) {
-          return null;
-        }
+          if (!metadata) {
+            return null;
+          }
 
-        return {
-          roomName: room.name,
-          hostName: metadata.hostName,
-          isSharing: metadata.isSharing,
-          participantCount: room.numParticipants,
-          listenerCount: Math.max(0, room.numParticipants - 1),
-          createdAt: metadata.createdAt,
-          updatedAt: metadata.updatedAt,
-        };
-      })
+          return getLiveRoomSummary(roomService, room, metadata);
+        }),
+      )
+    )
       .filter((room): room is LiveRoomSummary => Boolean(room))
       .sort((a, b) => {
         if (a.isSharing !== b.isSharing) {

@@ -3,6 +3,7 @@
 import { RemoteAudioTrack, Room, RoomEvent, Track } from "livekit-client";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { STABLE_AUDIO_PLAYOUT_DELAY_SECONDS } from "@/lib/audio-reliability";
 import { fetchLiveRooms } from "@/lib/client-rooms";
 import {
   getErrorMessage,
@@ -65,19 +66,19 @@ function statusText(status: GuestStatus) {
 function statusDetail(status: GuestStatus) {
   switch (status) {
     case "idle":
-      return "Tap Join audio.";
+      return "Use the button below to listen.";
     case "connecting":
-      return "Opening the room.";
+      return "Getting you into the room.";
     case "waiting":
       return "Host hasn't started sharing yet.";
     case "connected":
-      return "Tap Start audio if you hear nothing.";
+      return "Unlock playback if it stays quiet.";
     case "playing":
-      return "Playing in your headphones.";
+      return "Audio is coming through.";
     case "stopped":
       return "Stay here or change rooms.";
     case "disconnected":
-      return "You left the room.";
+      return "You are out of the room.";
     case "error":
       return "Try again.";
   }
@@ -180,6 +181,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
 
       if (remoteAudioTrackRef.current !== track) {
         detachAudio();
+        track.setPlayoutDelay(STABLE_AUDIO_PLAYOUT_DELAY_SECONDS);
         track.attach(audioElement);
         remoteAudioTrackRef.current = track;
       }
@@ -417,13 +419,13 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
     status === "playing" ||
     status === "stopped";
   const primaryButtonLabel = isConnecting
-    ? "Joining..."
+    ? "Opening room..."
     : needsAudioTap
-      ? "Start audio"
+      ? "Start playback"
       : isInRoom
         ? status === "playing"
-          ? "Playing"
-          : "Joined"
+          ? "Listening"
+          : "In room"
         : "Join audio";
 
   const renderRoomButton = (room: LiveRoomSummary) => {

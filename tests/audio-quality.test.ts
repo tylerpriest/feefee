@@ -52,13 +52,13 @@ test("audio diagnostics format unknown values", () => {
   assert.deepEqual(diagnostics.warnings, []);
 });
 
-test("audio diagnostics warn when capture constraints are ignored", () => {
+test("audio diagnostics accept common music sample rates", () => {
   const diagnostics = formatAudioDiagnostics({
     mode: "ultra",
     targetBitrate: 192_000,
     outboundBitrate: 191_600,
     sampleRate: 44_100,
-    channelCount: 1,
+    channelCount: 2,
     echoCancellation: false,
     noiseSuppression: false,
     autoGainControl: false,
@@ -68,13 +68,28 @@ test("audio diagnostics warn when capture constraints are ignored", () => {
 
   assert.equal(diagnostics.mode, "Ultra");
   assert.equal(diagnostics.outboundBitrate, "192 kbps");
-  assert.equal(diagnostics.capture, "44.1 kHz, mono");
+  assert.equal(diagnostics.capture, "44.1 kHz, stereo");
   assert.equal(diagnostics.processing, "Off");
   assert.equal(diagnostics.packetLoss, "3 packets");
   assert.equal(diagnostics.roundTripTime, "43 ms");
+  assert.deepEqual(diagnostics.warnings, []);
+});
+
+test("audio diagnostics warn when capture constraints are degraded", () => {
+  const diagnostics = formatAudioDiagnostics({
+    mode: "ultra",
+    targetBitrate: 192_000,
+    sampleRate: 32_000,
+    channelCount: 1,
+    echoCancellation: false,
+    noiseSuppression: false,
+    autoGainControl: false,
+  });
+
+  assert.equal(diagnostics.capture, "32 kHz, mono");
   assert.deepEqual(diagnostics.warnings, [
     "Browser captured mono audio.",
-    "Browser reported 44.1 kHz instead of 48 kHz.",
+    "Browser reported an unusual 32 kHz capture rate.",
   ]);
 });
 

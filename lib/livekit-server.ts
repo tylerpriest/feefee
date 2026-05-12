@@ -1,6 +1,10 @@
 import type { Room } from "livekit-server-sdk";
 import { RoomServiceClient } from "livekit-server-sdk";
 import {
+  STABLE_AUDIO_MAX_PLAYOUT_DELAY_MS,
+  STABLE_AUDIO_MIN_PLAYOUT_DELAY_MS,
+} from "@/lib/audio-reliability";
+import {
   controlTokenMatchesHash,
   hashControlToken,
 } from "@/lib/control-token";
@@ -115,6 +119,8 @@ export async function ensureFeefeeRoom(
       emptyTimeout: 60,
       departureTimeout: 300,
       maxParticipants: 8,
+      minPlayoutDelay: STABLE_AUDIO_MIN_PLAYOUT_DELAY_MS,
+      maxPlayoutDelay: STABLE_AUDIO_MAX_PLAYOUT_DELAY_MS,
       metadata: makeFeefeeMetadata({
         hostName: safeHostName,
         isSharing,

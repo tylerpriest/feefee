@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { AccessToken, TrackSource } from "livekit-server-sdk";
 import { NextResponse } from "next/server";
 import { verifyControlToken } from "@/lib/control-token";
+import { hostIdentityForRoom } from "@/lib/livekit-room-state";
 import { ensureFeefeeRoom, getRoomServiceClient } from "@/lib/livekit-server";
 import { isValidRoomName } from "@/lib/rooms";
 
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
 
       await ensureFeefeeRoom(roomName, { controlToken, roomService });
       await roomService
-        .removeParticipant(roomName, `host-${roomName}`)
+        .removeParticipant(roomName, hostIdentityForRoom(roomName))
         .catch(() => undefined);
     } catch (error) {
       if (
@@ -86,7 +87,7 @@ export async function POST(request: Request) {
   }
 
   const identity =
-    role === "host" ? `host-${roomName}` : `listener-${randomUUID()}`;
+    role === "host" ? hostIdentityForRoom(roomName) : `listener-${randomUUID()}`;
 
   const token = new AccessToken(apiKey, apiSecret, {
     identity,
