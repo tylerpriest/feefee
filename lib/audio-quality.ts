@@ -38,8 +38,8 @@ export type FormattedAudioDiagnostics = {
   warnings: string[];
 };
 
-export const DEFAULT_AUDIO_QUALITY_MODE: AudioQualityMode = "high";
-export const AUDIO_QUALITY_MODE_ORDER = ["high", "ultra"] as const;
+export const DEFAULT_AUDIO_QUALITY_MODE: AudioQualityMode = "ultra";
+export const AUDIO_QUALITY_MODE_ORDER = ["ultra", "high"] as const;
 
 export const AUDIO_QUALITY_PRESETS = {
   high: {

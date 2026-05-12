@@ -7,12 +7,12 @@ import {
   getAudioQualityPreset,
 } from "@/lib/audio-quality";
 
-test("audio quality defaults to high quality stereo music", () => {
+test("audio quality defaults to ultra quality stereo music", () => {
   const preset = getAudioQualityPreset(DEFAULT_AUDIO_QUALITY_MODE);
 
-  assert.equal(preset.mode, "high");
-  assert.equal(preset.targetBitrate, 128_000);
-  assert.equal(preset.publishOptions.audioPreset?.maxBitrate, 128_000);
+  assert.equal(preset.mode, "ultra");
+  assert.equal(preset.targetBitrate, 192_000);
+  assert.equal(preset.publishOptions.audioPreset?.maxBitrate, 192_000);
   assert.equal(preset.publishOptions.forceStereo, true);
   assert.equal(preset.publishOptions.dtx, false);
   assert.equal(preset.publishOptions.red, true);
