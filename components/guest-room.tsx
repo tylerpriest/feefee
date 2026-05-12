@@ -3,7 +3,17 @@
 import { RemoteAudioTrack, Room, RoomEvent, Track } from "livekit-client";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { STABLE_AUDIO_PLAYOUT_DELAY_SECONDS } from "@/lib/audio-reliability";
+import {
+  DEFAULT_LISTENER_STABILITY_MODE,
+  LISTENER_STABILITY_MODE_ORDER,
+  formatListenerAudioDiagnostics,
+  formatPlayoutDelay,
+  getListenerStabilityPreset,
+  hasRecentReceiverTrouble,
+  listenerPlayoutDelaySeconds,
+  type ListenerAudioDiagnostics,
+  type ListenerStabilityMode,
+} from "@/lib/audio-reliability";
 import { fetchLiveRooms } from "@/lib/client-rooms";
 import {
   getErrorMessage,
@@ -47,17 +57,17 @@ function statusText(status: GuestStatus) {
     case "idle":
       return "Ready";
     case "connecting":
-      return "Joining";
+      return "Connecting";
     case "waiting":
-      return "Waiting for music";
+      return "Waiting";
     case "connected":
-      return "Connected";
+      return "Audio ready";
     case "playing":
-      return "Playing";
+      return "Listening";
     case "stopped":
-      return "Host stopped sharing";
+      return "Music paused";
     case "disconnected":
-      return "Disconnected";
+      return "Left room";
     case "error":
       return "Could not join";
   }
@@ -66,19 +76,19 @@ function statusText(status: GuestStatus) {
 function statusDetail(status: GuestStatus) {
   switch (status) {
     case "idle":
-      return "Use the button below to listen.";
+      return "Join when you are ready.";
     case "connecting":
-      return "Getting you into the room.";
+      return "Opening the room.";
     case "waiting":
-      return "Host hasn't started sharing yet.";
+      return "Music has not started yet.";
     case "connected":
-      return "Unlock playback if it stays quiet.";
+      return "Tap once to start sound.";
     case "playing":
-      return "Audio is coming through.";
+      return "Keep your headphones on.";
     case "stopped":
       return "Stay here or change rooms.";
     case "disconnected":
-      return "You are out of the room.";
+      return "Rejoin whenever you're ready.";
     case "error":
       return "Try again.";
   }
@@ -95,6 +105,14 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
   );
   const [error, setError] = useState("");
   const [needsAudioTap, setNeedsAudioTap] = useState(false);
+  const [listenerStabilityMode, setListenerStabilityMode] =
+    useState<ListenerStabilityMode>(DEFAULT_LISTENER_STABILITY_MODE);
+  const [hasRemoteAudio, setHasRemoteAudio] = useState(false);
+  const [receiverDiagnostics, setReceiverDiagnostics] =
+    useState<ListenerAudioDiagnostics | null>(null);
+  const [appliedPlayoutDelaySeconds, setAppliedPlayoutDelaySeconds] = useState(
+    listenerPlayoutDelaySeconds(DEFAULT_LISTENER_STABILITY_MODE),
+  );
   const [{ rooms, error: roomsError, isLoading }, setRoomsState] =
     useState<RoomsState>({
       rooms: [],
@@ -108,6 +126,9 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const remoteAudioTrackRef = useRef<RemoteAudioTrack | null>(null);
   const connectionRunRef = useRef(0);
+  const listenerStabilityModeRef = useRef(listenerStabilityMode);
+  const receiverDiagnosticsRef = useRef<ListenerAudioDiagnostics | null>(null);
+  const hasRecentReceiverTroubleRef = useRef(false);
 
   const activeRoom = useMemo(
     () => rooms.find((room) => room.roomName === activeRoomName),
@@ -123,6 +144,22 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
     liveRooms,
     activeRoomName,
   );
+  const formattedReceiverDiagnostics = formatListenerAudioDiagnostics(
+    receiverDiagnostics,
+  );
+
+  const applyListenerPlayoutDelay = useCallback(
+    (track: RemoteAudioTrack, hasRecentTrouble: boolean) => {
+      const nextDelay = listenerPlayoutDelaySeconds(
+        listenerStabilityModeRef.current,
+        hasRecentTrouble,
+      );
+
+      track.setPlayoutDelay(nextDelay);
+      setAppliedPlayoutDelaySeconds(nextDelay);
+    },
+    [],
+  );
 
   const detachAudio = useCallback(() => {
     const audioElement = audioRef.current;
@@ -136,6 +173,13 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
     }
 
     remoteAudioTrackRef.current = null;
+    receiverDiagnosticsRef.current = null;
+    hasRecentReceiverTroubleRef.current = false;
+    setHasRemoteAudio(false);
+    setReceiverDiagnostics(null);
+    setAppliedPlayoutDelaySeconds(
+      listenerPlayoutDelaySeconds(listenerStabilityModeRef.current),
+    );
     setNeedsAudioTap(false);
   }, []);
 
@@ -181,16 +225,17 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
 
       if (remoteAudioTrackRef.current !== track) {
         detachAudio();
-        track.setPlayoutDelay(STABLE_AUDIO_PLAYOUT_DELAY_SECONDS);
+        applyListenerPlayoutDelay(track, hasRecentReceiverTroubleRef.current);
         track.attach(audioElement);
         remoteAudioTrackRef.current = track;
+        setHasRemoteAudio(true);
       }
 
       setStatus("connected");
       void startPlayback();
       return true;
     },
-    [detachAudio, startPlayback],
+    [applyListenerPlayoutDelay, detachAudio, startPlayback],
   );
 
   const disconnectCurrentRoom = useCallback(
@@ -343,6 +388,78 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
   }, [detachAudio]);
 
   useEffect(() => {
+    listenerStabilityModeRef.current = listenerStabilityMode;
+
+    const audioTrack = remoteAudioTrackRef.current;
+
+    if (audioTrack) {
+      applyListenerPlayoutDelay(
+        audioTrack,
+        hasRecentReceiverTroubleRef.current,
+      );
+    } else {
+      setAppliedPlayoutDelaySeconds(
+        listenerPlayoutDelaySeconds(listenerStabilityMode),
+      );
+    }
+  }, [applyListenerPlayoutDelay, listenerStabilityMode]);
+
+  useEffect(() => {
+    if (!hasRemoteAudio) {
+      return;
+    }
+
+    let isActive = true;
+
+    async function refreshReceiverDiagnostics() {
+      const audioTrack = remoteAudioTrackRef.current;
+
+      if (!audioTrack) {
+        return;
+      }
+
+      const stats = await audioTrack
+        .getReceiverStats()
+        .catch(() => undefined);
+
+      if (!stats || !isActive) {
+        return;
+      }
+
+      const nextDiagnostics: ListenerAudioDiagnostics = {
+        packetsLost: stats.packetsLost,
+        packetsReceived: stats.packetsReceived,
+        jitter: stats.jitter,
+        jitterBufferDelay: stats.jitterBufferDelay,
+        concealedSamples: stats.concealedSamples,
+        concealmentEvents: stats.concealmentEvents,
+      };
+      const hasRecentTrouble = hasRecentReceiverTrouble(
+        nextDiagnostics,
+        receiverDiagnosticsRef.current,
+      );
+
+      receiverDiagnosticsRef.current = nextDiagnostics;
+      hasRecentReceiverTroubleRef.current = hasRecentTrouble;
+      setReceiverDiagnostics(nextDiagnostics);
+
+      if (listenerStabilityModeRef.current === "auto") {
+        applyListenerPlayoutDelay(audioTrack, hasRecentTrouble);
+      }
+    }
+
+    void refreshReceiverDiagnostics();
+    const intervalId = window.setInterval(() => {
+      void refreshReceiverDiagnostics();
+    }, 2000);
+
+    return () => {
+      isActive = false;
+      window.clearInterval(intervalId);
+    };
+  }, [applyListenerPlayoutDelay, hasRemoteAudio]);
+
+  useEffect(() => {
     let isActive = true;
 
     async function loadRooms() {
@@ -419,12 +536,12 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
     status === "playing" ||
     status === "stopped";
   const primaryButtonLabel = isConnecting
-    ? "Opening room..."
+    ? "Joining..."
     : needsAudioTap
-      ? "Start playback"
+      ? "Start sound"
       : isInRoom
         ? status === "playing"
-          ? "Listening"
+          ? "Audio live"
           : "In room"
         : "Join audio";
 
@@ -523,6 +640,96 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
           Leave
         </button>
       </div>
+
+      <details className="mt-4 rounded-lg border border-stone-800 bg-stone-950/42 p-4">
+        <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] text-stone-500">
+          Advanced audio
+        </summary>
+
+        <div
+          role="radiogroup"
+          aria-label="Listener stability"
+          className="mt-4 grid grid-cols-2 gap-2"
+        >
+          {LISTENER_STABILITY_MODE_ORDER.map((mode) => {
+            const preset = getListenerStabilityPreset(mode);
+            const isSelected = mode === listenerStabilityMode;
+
+            return (
+              <button
+                key={mode}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                onClick={() => setListenerStabilityMode(mode)}
+                className={`h-14 rounded-md border px-3 text-left transition focus:outline-none focus:ring-4 focus:ring-[#c2ad78]/20 ${
+                  isSelected
+                    ? "border-[#c2ad78] bg-[#c2ad78] text-stone-950"
+                    : "border-stone-700 bg-stone-900 text-stone-100 hover:bg-stone-800"
+                }`}
+              >
+                <span className="block text-sm font-black">
+                  {preset.label}
+                </span>
+                <span className="mt-1 block text-xs font-bold opacity-80">
+                  {formatPlayoutDelay(preset.playoutDelaySeconds)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <p className="font-semibold uppercase tracking-[0.14em] text-stone-500">
+              Delay
+            </p>
+            <p className="mt-1 font-black text-stone-100">
+              {formatPlayoutDelay(appliedPlayoutDelaySeconds)}
+            </p>
+          </div>
+          <div>
+            <p className="font-semibold uppercase tracking-[0.14em] text-stone-500">
+              Loss
+            </p>
+            <p className="mt-1 font-black text-stone-100">
+              {formattedReceiverDiagnostics.packetLoss}
+            </p>
+          </div>
+          <div>
+            <p className="font-semibold uppercase tracking-[0.14em] text-stone-500">
+              Jitter
+            </p>
+            <p className="mt-1 font-bold text-stone-200">
+              {formattedReceiverDiagnostics.jitter}
+            </p>
+          </div>
+          <div>
+            <p className="font-semibold uppercase tracking-[0.14em] text-stone-500">
+              Buffer
+            </p>
+            <p className="mt-1 font-bold text-stone-200">
+              {formattedReceiverDiagnostics.jitterBuffer}
+            </p>
+          </div>
+          <div>
+            <p className="font-semibold uppercase tracking-[0.14em] text-stone-500">
+              Conceal
+            </p>
+            <p className="mt-1 font-bold text-stone-200">
+              {formattedReceiverDiagnostics.concealmentEvents}
+            </p>
+          </div>
+          <div>
+            <p className="font-semibold uppercase tracking-[0.14em] text-stone-500">
+              Packets
+            </p>
+            <p className="mt-1 font-bold text-stone-200">
+              {formattedReceiverDiagnostics.packetsReceived}
+            </p>
+          </div>
+        </div>
+      </details>
 
       <details
         className="mt-6 rounded-lg border border-stone-800 bg-stone-950/42 p-4"

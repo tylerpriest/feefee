@@ -793,8 +793,60 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
         <p className="mt-2 text-base font-semibold text-stone-300">
           {listenerLabel(listenerCount)}
         </p>
+      </section>
+
+      {error ? (
+        <p className="mt-4 rounded-lg border border-red-400/40 bg-red-950/50 p-4 text-sm font-semibold leading-6 text-red-100">
+          {error}
+        </p>
+      ) : null}
+
+      <details className="mt-4 rounded-lg border border-stone-800 bg-stone-950/42 p-4">
+        <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.16em] text-stone-500">
+          Advanced audio
+        </summary>
+
+        <div className="mt-4">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-stone-400">
+            Audio quality
+          </p>
+          <div
+            role="radiogroup"
+            aria-label="Audio quality"
+            className="mt-3 grid grid-cols-2 gap-2"
+          >
+            {AUDIO_QUALITY_MODE_ORDER.map((mode) => {
+              const preset = getAudioQualityPreset(mode);
+              const isSelected = mode === audioQualityMode;
+
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  onClick={() => setAudioQualityMode(mode)}
+                  disabled={isSharing || isShareBusy || isLeaving}
+                  className={`h-16 rounded-md border px-3 text-left transition focus:outline-none focus:ring-4 focus:ring-[#c2ad78]/20 disabled:cursor-not-allowed ${
+                    isSelected
+                      ? "border-[#c2ad78] bg-[#c2ad78] text-stone-950"
+                      : "border-stone-700 bg-stone-900 text-stone-100 hover:bg-stone-800 disabled:text-stone-500"
+                  }`}
+                >
+                  <span className="block text-base font-black">
+                    {preset.label}
+                  </span>
+                  <span className="mt-1 block text-sm font-bold opacity-80">
+                    {formatAudioBitrate(preset.targetBitrate)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {formattedAudioDiagnostics ? (
-          <div className="mt-4 rounded-md border border-stone-800 bg-stone-900/70 p-3">
+          <div className="mt-4 border-t border-stone-800 pt-4">
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="font-semibold uppercase tracking-[0.14em] text-stone-500">
@@ -853,58 +905,13 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
             ) : null}
           </div>
         ) : null}
-      </section>
-
-      {error ? (
-        <p className="mt-4 rounded-lg border border-red-400/40 bg-red-950/50 p-4 text-sm font-semibold leading-6 text-red-100">
-          {error}
-        </p>
-      ) : null}
+      </details>
 
       <section className="mt-5 grid gap-3">
         <div className="rounded-lg border border-stone-800 bg-stone-950/42 p-4">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-stone-400">
-            Audio quality
-          </p>
-          <div
-            role="radiogroup"
-            aria-label="Audio quality"
-            className="mt-3 grid grid-cols-2 gap-2"
-          >
-            {AUDIO_QUALITY_MODE_ORDER.map((mode) => {
-              const preset = getAudioQualityPreset(mode);
-              const isSelected = mode === audioQualityMode;
-
-              return (
-                <button
-                  key={mode}
-                  type="button"
-                  role="radio"
-                  aria-checked={isSelected}
-                  onClick={() => setAudioQualityMode(mode)}
-                  disabled={isSharing || isShareBusy || isLeaving}
-                  className={`h-16 rounded-md border px-3 text-left transition focus:outline-none focus:ring-4 focus:ring-[#c2ad78]/20 disabled:cursor-not-allowed ${
-                    isSelected
-                      ? "border-[#c2ad78] bg-[#c2ad78] text-stone-950"
-                      : "border-stone-700 bg-stone-900 text-stone-100 hover:bg-stone-800 disabled:text-stone-500"
-                  }`}
-                >
-                  <span className="block text-base font-black">
-                    {preset.label}
-                  </span>
-                  <span className="mt-1 block text-sm font-bold opacity-80">
-                    {formatAudioBitrate(preset.targetBitrate)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-stone-800 bg-stone-950/42 p-4">
           <ol className="grid gap-3 text-base font-bold leading-6 text-stone-200">
             <li>1. Play music in another tab.</li>
-            <li>2. Start sharing here.</li>
+            <li>2. Click Share music.</li>
             <li>3. Pick that tab and turn on tab audio.</li>
           </ol>
         </div>
@@ -915,7 +922,7 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
           disabled={!isConnected || isSharing || isShareBusy || isLeaving}
           className="flex h-16 w-full items-center justify-center rounded-lg bg-[#c2ad78] px-6 text-xl font-black text-stone-950 transition hover:bg-[#d2c18f] focus:outline-none focus:ring-4 focus:ring-[#c2ad78]/25 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
         >
-          {isShareBusy ? "Sharing..." : isSharing ? "Live now" : "Share music"}
+          {isShareBusy ? "Starting..." : isSharing ? "Sharing audio" : "Share music"}
         </button>
 
         <button
