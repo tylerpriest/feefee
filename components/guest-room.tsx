@@ -16,6 +16,7 @@ import {
   randomLiveRoom,
   splitRoomsBySharing,
 } from "@/lib/room-navigation";
+import { pushGuestRoomPathIfChanged } from "@/lib/guest-history";
 import type { LiveRoomSummary } from "@/lib/room-metadata";
 import { titleFromRoomName } from "@/lib/room-metadata";
 
@@ -218,7 +219,7 @@ export function GuestRoom({ roomName, autoJoin = false }: GuestRoomProps) {
 
       await disconnectCurrentRoom("disconnected");
       setActiveRoomName(nextRoomName);
-      window.history.pushState(null, "", `/room/${nextRoomName}?join=1`);
+      pushGuestRoomPathIfChanged(window, nextRoomName);
       setStatus("connecting");
       setError("");
       setNeedsAudioTap(false);

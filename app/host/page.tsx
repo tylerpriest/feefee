@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { HostStartForm } from "@/components/host-start-form";
 import { createControlToken } from "@/lib/control-token";
+import { hostSetupError } from "@/lib/host-setup";
 import { isValidRoomName, randomRoomName, slugifyRoomName } from "@/lib/rooms";
 
 export const dynamic = "force-dynamic";
@@ -30,8 +31,9 @@ export default async function HostPage({ searchParams }: HostPageProps) {
   const requestedRoom = Array.isArray(room) ? room[0] : room;
   const suggestedRoomName = randomRoomName();
   const roomName = requestedRoom ? slugifyRoomName(requestedRoom) : "";
+  const setupError = requestedRoom ? hostSetupError() : "";
 
-  if (requestedRoom !== undefined && isValidRoomName(roomName)) {
+  if (requestedRoom !== undefined && isValidRoomName(roomName) && !setupError) {
     const controlToken = createControlToken(roomName);
 
     redirect(`/host/${roomName}?control=${encodeURIComponent(controlToken)}`);
@@ -61,6 +63,11 @@ export default async function HostPage({ searchParams }: HostPageProps) {
       {hasInvalidRoom ? (
         <p className="mt-5 rounded-lg border border-red-400/40 bg-red-950/50 p-4 text-sm font-semibold leading-6 text-red-100">
           Use at least 3 letters or numbers.
+        </p>
+      ) : null}
+      {setupError ? (
+        <p className="mt-5 rounded-lg border border-amber-300/40 bg-amber-950/40 p-4 text-sm font-semibold leading-6 text-amber-100">
+          {setupError}
         </p>
       ) : null}
       <HostStartForm
