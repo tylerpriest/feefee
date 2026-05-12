@@ -6,6 +6,7 @@ import {
   Room,
   RoomEvent,
   Track,
+  type LocalTrackPublication,
 } from "livekit-client";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
@@ -29,6 +30,15 @@ import {
   parseFeefeeMetadata,
   titleFromRoomName,
 } from "@/lib/room-metadata";
+import {
+  AUDIO_QUALITY_MODE_ORDER,
+  DEFAULT_AUDIO_QUALITY_MODE,
+  formatAudioBitrate,
+  formatAudioDiagnostics,
+  getAudioQualityPreset,
+  type AudioDiagnostics,
+  type AudioQualityMode,
+} from "@/lib/audio-quality";
 
 const NO_AUDIO_MESSAGE =
   "Choose the music tab and turn on tab audio.";
@@ -124,7 +134,13 @@ function makeControllerId() {
 
 function getDisplayMediaOptions(): DisplayMediaOptionsWithAudioHints {
   return {
-    audio: true,
+    audio: {
+      autoGainControl: false,
+      channelCount: 2,
+      echoCancellation: false,
+      noiseSuppression: false,
+      sampleRate: 48_000,
+    },
     video: true,
     preferCurrentTab: false,
     selfBrowserSurface: "exclude",
@@ -140,6 +156,35 @@ function getNoAudioMessage() {
   }
 
   return NO_AUDIO_MESSAGE;
+}
+
+function getBooleanAudioSetting(value: boolean | string | undefined) {
+  return typeof value === "boolean" ? value : undefined;
+}
+
+async function getAudioDiagnostics(
+  mode: AudioQualityMode,
+  audioTrack: MediaStreamTrack,
+  publication: LocalTrackPublication,
+): Promise<AudioDiagnostics> {
+  const settings = audioTrack.getSettings();
+  const senderStats = await publication.audioTrack
+    ?.getSenderStats()
+    .catch(() => undefined);
+  const preset = getAudioQualityPreset(mode);
+
+  return {
+    mode,
+    targetBitrate: preset.targetBitrate,
+    outboundBitrate: publication.audioTrack?.currentBitrate || undefined,
+    sampleRate: settings.sampleRate,
+    channelCount: settings.channelCount,
+    echoCancellation: getBooleanAudioSetting(settings.echoCancellation),
+    noiseSuppression: getBooleanAudioSetting(settings.noiseSuppression),
+    autoGainControl: getBooleanAudioSetting(settings.autoGainControl),
+    packetsLost: senderStats?.packetsLost,
+    roundTripTime: senderStats?.roundTripTime,
+  };
 }
 
 export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
@@ -160,10 +205,15 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
   const [copiedHost, setCopiedHost] = useState(false);
   const [controlToken, setControlToken] = useState<string | null>();
   const [hasLoadedRoom, setHasLoadedRoom] = useState(false);
+  const [audioQualityMode, setAudioQualityMode] =
+    useState<AudioQualityMode>(DEFAULT_AUDIO_QUALITY_MODE);
+  const [audioDiagnostics, setAudioDiagnostics] =
+    useState<AudioDiagnostics | null>(null);
 
   const roomRef = useRef<Room | null>(null);
   const captureStreamRef = useRef<MediaStream | null>(null);
   const sharedAudioTrackRef = useRef<MediaStreamTrack | null>(null);
+  const sharedAudioPublicationRef = useRef<LocalTrackPublication | null>(null);
   const hostNameRef = useRef(defaultHostName);
   const wasTakenOverRef = useRef(false);
   const controllerIdRef = useRef(makeControllerId());
@@ -258,9 +308,11 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
       stopTracks(captureStreamRef.current);
       captureStreamRef.current = null;
       sharedAudioTrackRef.current = null;
+      sharedAudioPublicationRef.current = null;
       setStatus("taken-over");
       setListenerCount(0);
       setIsSharing(false);
+      setAudioDiagnostics(null);
       setError("Host opened somewhere else.");
       void room?.disconnect(true);
     },
@@ -332,7 +384,9 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
     stopTracks(captureStreamRef.current);
     captureStreamRef.current = null;
     sharedAudioTrackRef.current = null;
+    sharedAudioPublicationRef.current = null;
     setIsSharing(false);
+    setAudioDiagnostics(null);
     await publishRoomState(false);
 
     if (room?.state === ConnectionState.Connected) {
@@ -407,9 +461,11 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
           stopTracks(captureStreamRef.current);
           captureStreamRef.current = null;
           sharedAudioTrackRef.current = null;
+          sharedAudioPublicationRef.current = null;
           setStatus(wasTakenOver ? "taken-over" : "disconnected");
           setListenerCount(0);
           setIsSharing(false);
+          setAudioDiagnostics(null);
           setError(wasTakenOver ? "Host opened somewhere else." : "");
         }
       });
@@ -457,6 +513,8 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
       stopTracks(captureStreamRef.current);
       captureStreamRef.current = null;
       sharedAudioTrackRef.current = null;
+      sharedAudioPublicationRef.current = null;
+      setAudioDiagnostics(null);
       if (!wasTakenOverRef.current) {
         void publishRoomState(false);
       }
@@ -512,6 +570,43 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
     return () => window.clearTimeout(timeoutId);
   }, [hostName, isSharing, publishRoomState, roomName, status]);
 
+  useEffect(() => {
+    if (!isSharing) {
+      return;
+    }
+
+    let isActive = true;
+
+    async function refreshAudioDiagnostics() {
+      const audioTrack = sharedAudioTrackRef.current;
+      const publication = sharedAudioPublicationRef.current;
+
+      if (!audioTrack || !publication) {
+        return;
+      }
+
+      const nextDiagnostics = await getAudioDiagnostics(
+        audioQualityMode,
+        audioTrack,
+        publication,
+      );
+
+      if (isActive) {
+        setAudioDiagnostics(nextDiagnostics);
+      }
+    }
+
+    void refreshAudioDiagnostics();
+    const intervalId = window.setInterval(() => {
+      void refreshAudioDiagnostics();
+    }, 2000);
+
+    return () => {
+      isActive = false;
+      window.clearInterval(intervalId);
+    };
+  }, [audioQualityMode, isSharing]);
+
   const shareMusic = useCallback(async () => {
     const room = roomRef.current;
 
@@ -557,11 +652,14 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
 
       captureStreamRef.current = stream;
       sharedAudioTrackRef.current = audioTrack;
+      const audioQualityPreset = getAudioQualityPreset(audioQualityMode);
 
-      await room.localParticipant.publishTrack(audioTrack, {
+      const publication = await room.localParticipant.publishTrack(audioTrack, {
+        ...audioQualityPreset.publishOptions,
         name: "feefee-tab-audio",
         source: Track.Source.ScreenShareAudio,
       });
+      sharedAudioPublicationRef.current = publication;
 
       stream.getVideoTracks().forEach((videoTrack) => {
         videoTrack.enabled = false;
@@ -574,7 +672,9 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
       stopTracks(captureStreamRef.current);
       captureStreamRef.current = null;
       sharedAudioTrackRef.current = null;
+      sharedAudioPublicationRef.current = null;
       setIsSharing(false);
+      setAudioDiagnostics(null);
       await publishRoomState(false);
 
       if (shareError instanceof DOMException && shareError.name === "NotAllowedError") {
@@ -585,7 +685,7 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
     } finally {
       setIsShareBusy(false);
     }
-  }, [publishRoomState, stopSharing]);
+  }, [audioQualityMode, publishRoomState, stopSharing]);
 
   const endRoom = useCallback(async () => {
     if (!controlToken) {
@@ -639,6 +739,15 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
   }, [hostControlLink]);
 
   const isConnected = status === "connected" || status === "sharing";
+  const selectedAudioQualityPreset = getAudioQualityPreset(audioQualityMode);
+  const formattedAudioDiagnostics = isSharing
+    ? formatAudioDiagnostics(
+        audioDiagnostics ?? {
+          mode: audioQualityMode,
+          targetBitrate: selectedAudioQualityPreset.targetBitrate,
+        },
+      )
+    : null;
   const showLocalHelper =
     process.env.NODE_ENV === "development" && roomLink.includes("192.168.");
 
@@ -684,6 +793,66 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
         <p className="mt-2 text-base font-semibold text-stone-300">
           {listenerLabel(listenerCount)}
         </p>
+        {formattedAudioDiagnostics ? (
+          <div className="mt-4 rounded-md border border-stone-800 bg-stone-900/70 p-3">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  Mode
+                </p>
+                <p className="mt-1 font-black text-stone-100">
+                  {formattedAudioDiagnostics.mode} /{" "}
+                  {formattedAudioDiagnostics.targetBitrate}
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  Sending
+                </p>
+                <p className="mt-1 font-black text-stone-100">
+                  {formattedAudioDiagnostics.outboundBitrate}
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  Capture
+                </p>
+                <p className="mt-1 font-bold text-stone-200">
+                  {formattedAudioDiagnostics.capture}
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  Processing
+                </p>
+                <p className="mt-1 font-bold text-stone-200">
+                  {formattedAudioDiagnostics.processing}
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  Loss
+                </p>
+                <p className="mt-1 font-bold text-stone-200">
+                  {formattedAudioDiagnostics.packetLoss}
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold uppercase tracking-[0.14em] text-stone-500">
+                  RTT
+                </p>
+                <p className="mt-1 font-bold text-stone-200">
+                  {formattedAudioDiagnostics.roundTripTime}
+                </p>
+              </div>
+            </div>
+            {formattedAudioDiagnostics.warnings.length > 0 ? (
+              <p className="mt-3 text-sm font-semibold leading-5 text-amber-100">
+                {formattedAudioDiagnostics.warnings.join(" ")}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </section>
 
       {error ? (
@@ -693,6 +862,45 @@ export function HostRoom({ roomName, initialControlToken }: HostRoomProps) {
       ) : null}
 
       <section className="mt-5 grid gap-3">
+        <div className="rounded-lg border border-stone-800 bg-stone-950/42 p-4">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-stone-400">
+            Audio quality
+          </p>
+          <div
+            role="radiogroup"
+            aria-label="Audio quality"
+            className="mt-3 grid grid-cols-2 gap-2"
+          >
+            {AUDIO_QUALITY_MODE_ORDER.map((mode) => {
+              const preset = getAudioQualityPreset(mode);
+              const isSelected = mode === audioQualityMode;
+
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  onClick={() => setAudioQualityMode(mode)}
+                  disabled={isSharing || isShareBusy || isLeaving}
+                  className={`h-16 rounded-md border px-3 text-left transition focus:outline-none focus:ring-4 focus:ring-[#c2ad78]/20 disabled:cursor-not-allowed ${
+                    isSelected
+                      ? "border-[#c2ad78] bg-[#c2ad78] text-stone-950"
+                      : "border-stone-700 bg-stone-900 text-stone-100 hover:bg-stone-800 disabled:text-stone-500"
+                  }`}
+                >
+                  <span className="block text-base font-black">
+                    {preset.label}
+                  </span>
+                  <span className="mt-1 block text-sm font-bold opacity-80">
+                    {formatAudioBitrate(preset.targetBitrate)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="rounded-lg border border-stone-800 bg-stone-950/42 p-4">
           <ol className="grid gap-3 text-base font-bold leading-6 text-stone-200">
             <li>1. Play music in another tab.</li>
