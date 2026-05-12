@@ -1,6 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#10100d"/>
-  <path fill="#c2ad78" d="M18 16h29v9H28v8h16v9H28v17H18z"/>
+  <defs>
+    <linearGradient id="appBackground" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#10100d"/>
+      <stop offset="0.5" stop-color="#15140f"/>
+      <stop offset="1" stop-color="#0b0c0a"/>
+    </linearGradient>
+    <radialGradient id="appGlow" cx="12" cy="8" r="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#b49758" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#b49758" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#appBackground)"/>
+  <rect width="64" height="64" rx="14" fill="url(#appGlow)"/>
+  <path fill="#f2efe4" d="M18 16h29v9H28v8h16v9H28v17H18z"/>
   <circle cx="47" cy="48" r="4" fill="#c2ad78"/>
   <path fill="none" stroke="#c2ad78" stroke-linecap="round" stroke-width="4" d="M51 40c3 2 5 5 5 8s-2 6-5 8"/>
 </svg>
