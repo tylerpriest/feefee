@@ -14,8 +14,7 @@ export default function Home() {
         People hear it.
       </h1>
       <p className="mt-6 max-w-md text-lg leading-7 text-stone-300">
-        Share whatever is playing in one browser tab. Friends scan the QR and
-        listen in headphones.
+        Play music. Friends scan in. Everyone listens together.
       </p>
       <div className="mt-10 grid gap-3">
         <Link
