@@ -1,25 +1,86 @@
 # Feefee
 
-Feefee is a small web app for sharing one browser tab's audio with friends.
-
-Core goal:
+Feefee lets one person share the audio from a browser tab with friends.
 
 ```text
 Play song. Show QR. People hear it.
 ```
 
-The host shares one browser tab's audio into a LiveKit room. Feefee shows a QR
-code and lists live rooms at `/rooms`. Guests scan or pick a room, Feefee tries
-to join immediately, and they listen in headphones. While listening, guests can
-switch with Previous, Random, Next, or the room picker. Hosts can copy a private
-host link to reuse the same room.
+Open Feefee, start a room, share a music tab, and friends listen from their own
+phones in headphones.
 
-## LiveKit Cloud Setup
+Live app: <https://feefee.vercel.app>
 
-1. Create a LiveKit Cloud project at https://cloud.livekit.io.
-2. Copy the project WebSocket URL. It looks like `wss://...livekit.cloud`.
-3. Create an API key and API secret for the project.
-4. Add the values to your local `.env.local` file and to Vercel.
+## How To Use
+
+1. Open <https://feefee.vercel.app>.
+2. Click **Start a room**.
+3. Open Spotify, YouTube, SoundCloud, or another audio site in a browser tab.
+4. Start playing music in that tab.
+5. In Feefee, click **Share music**.
+6. Pick the tab playing music and turn on tab audio.
+7. Share the QR code or room URL.
+8. Friends open the link, put in headphones, and listen.
+
+## What It Is
+
+- A tiny browser-tab audio room.
+- A QR-first way for friends to join from phones.
+- A LiveKit/WebRTC app with one host sending audio.
+- A simple utility for shared listening without accounts.
+
+## What It Is Not
+
+- Not a music streaming service.
+- Not a Spotify, YouTube, or SoundCloud replacement.
+- Not a downloader, recorder, file host, or media library.
+- Not a chat app, social network, or playlist platform.
+- Not a private security product. Anyone with a host control link can control
+  that room.
+
+## Features
+
+- Start named rooms from `/host`.
+- Share one browser tab's audio.
+- Show a QR code for guests.
+- List live rooms at `/rooms`.
+- Let listeners switch rooms with Previous, Random, Next, or the room picker.
+- Keep a private host link for returning to the same room.
+- Publish high-quality stereo music by default.
+
+## Non-Features
+
+- No accounts.
+- No saved profiles.
+- No payments.
+- No ads.
+- No analytics dashboard.
+- No in-app chat.
+- No uploads.
+- No permanent room database.
+- No mobile browser hosting as the main path.
+
+## Best Use
+
+Use Feefee for small, casual listening with friends. The host should use desktop
+Chrome or Edge, because browser tab-audio capture support varies.
+
+## Privacy Notes
+
+- LiveKit secrets belong in environment variables, not source control.
+- `.env.local`, `.vercel`, `.next`, and `node_modules` are ignored by git.
+- `NEXT_PUBLIC_LIVEKIT_URL` is public because the browser needs it.
+- Host control links are private capability URLs.
+- Room names and host names can appear in the public live-room list.
+
+## Local Dev
+
+```bash
+npm install
+npm run dev
+```
+
+Open <http://localhost:3000>.
 
 ## Environment Variables
 
@@ -30,55 +91,30 @@ NEXT_PUBLIC_LIVEKIT_URL=wss://your-project.livekit.cloud
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-`NEXT_PUBLIC_APP_URL` is optional in the browser. Feefee falls back to
-`window.location.origin` when it is not set.
+Create a LiveKit Cloud project at <https://cloud.livekit.io>, copy the WebSocket
+URL, and create an API key and secret.
 
-`LIVEKIT_URL` can also be used for the project URL locally. The app exposes it
-to the browser as `NEXT_PUBLIC_LIVEKIT_URL` during the Next.js build/dev server.
+## Deploy
 
-## Local Dev
+Deploy as a Next.js app on Vercel and add:
+
+- `LIVEKIT_API_KEY`
+- `LIVEKIT_API_SECRET`
+- `NEXT_PUBLIC_LIVEKIT_URL`
+- `NEXT_PUBLIC_APP_URL`
+
+## Tests
 
 ```bash
-npm install
-npm run dev
+npm run test
+npm run lint
+npm run build
 ```
 
-Open http://localhost:3000.
+## Public Repo Note
 
-- `/host` lets the host type a room name and starts that exact slug.
-- `/host/[roomId]` controls an existing host room when the browser has its private control token.
-- `/rooms` lists active Feefee rooms.
-- `/room/[roomId]` opens a room manually.
-- `/room/[roomId]?join=1` auto-starts the listener join flow and lets listeners switch rooms without going back to `/rooms`.
+`package.json` has `"private": true` only to prevent accidental npm publishing.
+That does not make the GitHub repo private.
 
-## Vercel Deployment
-
-1. Push the project to GitHub.
-2. Import it in Vercel as a Next.js app.
-3. Add `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, and `NEXT_PUBLIC_LIVEKIT_URL`.
-4. Add `NEXT_PUBLIC_APP_URL` with your deployed app URL.
-5. Deploy.
-
-## Test With 3 Friends
-
-1. Open `/host` in desktop Chrome or Edge.
-2. Type a room name, for example `gold pulse`, and start the room.
-3. Set a short room title or keep the generated name.
-4. Copy the host control link if you want to keep this room for later.
-5. Open YouTube, Spotify Web, SoundCloud, or another audio tab and start a song.
-6. In Feefee, click Share music.
-7. Pick the tab playing music and turn on tab audio.
-8. Show the QR code or send friends to `/rooms`.
-9. Friends scan the QR or choose the live room and put in headphones. Feefee tries to join immediately.
-10. Friends can use Previous, Random, Next, or the inline room picker to switch rooms.
-11. Stop sharing to confirm guests see that the host stopped sharing.
-12. End room when done.
-
-## Known Technical Limitations
-
-- Hosting works best in desktop Chrome or Edge because browser tab-audio capture support varies.
-- Firefox can join as a guest, but it may not provide tab audio when hosting.
-- The host must pick the music tab and turn on tab audio.
-- QR and live-room links auto-start the listener join flow with `?join=1`, but some mobile browsers may still require one extra tap before audio playback.
-- The host control link is private. Anyone with that link can control that room.
-- Typed room names are exact slugs. If a typed name is already active, only its existing host control link can control it.
+No license has been selected yet, so this is public source rather than an
+open-source project until a license is added.
